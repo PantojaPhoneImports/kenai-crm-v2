@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import {
   listarSocios,
   excluirSocio,
-} from "../../services/socios";
+} from "@/services/socios";
 
 export default function SociosTable() {
 
@@ -57,13 +57,9 @@ export default function SociosTable() {
 
       return (
 
-        socio.nome?.toLowerCase().includes(texto)
+        socio.nome?.toLowerCase().includes(texto) ||
 
-        ||
-
-        socio.telefone?.includes(busca)
-
-        ||
+        socio.telefone?.includes(busca) ||
 
         socio.email?.toLowerCase().includes(texto)
 
@@ -120,29 +116,17 @@ export default function SociosTable() {
 
             <tr>
 
-              <th className="p-4 text-left">
-                Nome
-              </th>
+              <th className="p-4 text-left">Nome</th>
 
-              <th className="p-4 text-left">
-                Telefone
-              </th>
+              <th className="p-4 text-left">Telefone</th>
 
-              <th className="p-4 text-left">
-                E-mail
-              </th>
+              <th className="p-4 text-left">E-mail</th>
 
-              <th className="p-4 text-center">
-                %
-              </th>
+              <th className="p-4 text-center">%</th>
 
-              <th className="p-4 text-center">
-                Status
-              </th>
+              <th className="p-4 text-center">Status</th>
 
-              <th className="p-4 text-center">
-                Ações
-              </th>
+              <th className="p-4 text-center">Ações</th>
 
             </tr>
 
@@ -175,19 +159,27 @@ export default function SociosTable() {
                 >
 
                   <td className="p-4 text-white font-medium">
+
                     {socio.nome}
+
                   </td>
 
                   <td className="p-4">
+
                     {socio.telefone}
+
                   </td>
 
                   <td className="p-4">
+
                     {socio.email}
+
                   </td>
 
                   <td className="p-4 text-center">
+
                     {socio.percentual}%
+
                   </td>
 
                   <td className="p-4 text-center">
@@ -216,7 +208,9 @@ export default function SociosTable() {
 
                     <div className="flex justify-center gap-2">
 
-                      <Link href={`/socios/${socio.id}`}>
+                      <Link
+                        href={`/socios/perfil/${socio.id}`}
+                      >
 
                         <Button
                           className="bg-green-600 hover:bg-green-700"
@@ -228,14 +222,20 @@ export default function SociosTable() {
 
                       </Link>
 
-                      <Button
-                        size="icon"
-                        variant="outline"
+                      <Link
+                        href={`/socios/perfil/${socio.id}?editar=true`}
                       >
 
-                        <Pencil size={17} />
+                        <Button
+                          size="icon"
+                          variant="outline"
+                        >
 
-                      </Button>
+                          <Pencil size={17} />
+
+                        </Button>
+
+                      </Link>
 
                       <Button
                         size="icon"
