@@ -1,0 +1,16 @@
+import Layout from "@/components/layout/Layout";
+import ProdutoFicha from "@/components/estoque/ProdutoFicha";
+
+export default function ProdutoFichaPage() {
+
+  return (
+
+    <Layout>
+
+      <ProdutoFicha />
+
+    </Layout>
+
+  );
+
+}
