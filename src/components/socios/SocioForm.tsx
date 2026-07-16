@@ -1,19 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
   criarSocio,
-} from "../../services/socios";
+  editarSocio,
+  buscarSocio,
+} from "@/services/socios";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-export default function SocioForm() {
+interface Props {
+  id?: string;
+}
+
+export default function SocioForm({
+  id,
+}: Props) {
 
   const router = useRouter();
+
+  const [carregando, setCarregando] = useState(false);
 
   const [socio, setSocio] = useState({
 
@@ -39,10 +49,54 @@ export default function SocioForm() {
 
   });
 
+  useEffect(() => {
+
+    if (!id) return;
+
+    carregar();
+
+  }, [id]);
+
+  async function carregar() {
+
+    setCarregando(true);
+
+    const dados = await buscarSocio(id!);
+
+    if (dados) {
+
+      setSocio({
+
+        nome: dados.nome || "",
+
+        cpf: dados.cpf || "",
+
+        telefone: dados.telefone || "",
+
+        email: dados.email || "",
+
+        percentual: Number(dados.percentual || 0),
+
+        pix: dados.pix || "",
+
+        status: dados.status || "ATIVO",
+
+        usuario: dados.usuario || "",
+
+        senha: dados.senha || "",
+
+        perfil: dados.perfil || "SOCIO",
+
+      });
+
+    }
+
+    setCarregando(false);
+
+  }
+
   function handleChange(
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) {
 
     const { name, value } = e.target;
@@ -62,11 +116,31 @@ export default function SocioForm() {
 
   async function salvar() {
 
-    await criarSocio(socio);
+    if (id) {
 
-    alert("Sócio cadastrado com sucesso!");
+      await editarSocio(id, socio);
+
+      alert("Sócio atualizado com sucesso!");
+
+    } else {
+
+      await criarSocio(socio);
+
+      alert("Sócio cadastrado com sucesso!");
+
+    }
 
     router.push("/socios");
+
+  }
+
+  if (carregando) {
+
+    return (
+      <div className="text-white">
+        Carregando...
+      </div>
+    );
 
   }
 
@@ -76,10 +150,11 @@ export default function SocioForm() {
 
       <h2 className="text-2xl font-bold text-white">
 
-        Novo Sócio
+        {id ? "Editar Sócio" : "Novo Sócio"}
 
       </h2>
-            <div>
+
+      <div>
 
         <Label>Nome</Label>
 
@@ -153,7 +228,7 @@ export default function SocioForm() {
 
         <div>
 
-          <Label>Chave Pix</Label>
+          <Label>PIX</Label>
 
           <Input
             name="pix"
@@ -255,19 +330,24 @@ export default function SocioForm() {
         </div>
 
       </div>
-            <div className="flex justify-end gap-3">
+
+      <div className="flex justify-end gap-3">
 
         <Button
           variant="outline"
           onClick={() => router.push("/socios")}
         >
+
           Cancelar
+
         </Button>
 
         <Button
           onClick={salvar}
         >
-          Salvar Sócio
+
+          {id ? "Atualizar Sócio" : "Salvar Sócio"}
+
         </Button>
 
       </div>

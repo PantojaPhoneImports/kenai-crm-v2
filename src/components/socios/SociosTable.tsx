@@ -16,11 +16,12 @@ import { Button } from "@/components/ui/button";
 import {
   listarSocios,
   excluirSocio,
+  Socio,
 } from "@/services/socios";
 
 export default function SociosTable() {
 
-  const [socios, setSocios] = useState<any[]>([]);
+  const [socios, setSocios] = useState<Socio[]>([]);
   const [busca, setBusca] = useState("");
 
   useEffect(() => {
@@ -53,13 +54,17 @@ export default function SociosTable() {
 
     const texto = busca.toLowerCase();
 
-    return socios.filter((socio: any) => {
+    return socios.filter((socio) => {
 
       return (
 
-        socio.nome?.toLowerCase().includes(texto) ||
+        socio.nome?.toLowerCase().includes(texto)
 
-        socio.telefone?.includes(busca) ||
+        ||
+
+        socio.telefone?.includes(busca)
+
+        ||
 
         socio.email?.toLowerCase().includes(texto)
 
@@ -116,25 +121,36 @@ export default function SociosTable() {
 
             <tr>
 
-              <th className="p-4 text-left">Nome</th>
+              <th className="p-4 text-left">
+                Nome
+              </th>
 
-              <th className="p-4 text-left">Telefone</th>
+              <th className="p-4 text-left">
+                Telefone
+              </th>
 
-              <th className="p-4 text-left">E-mail</th>
+              <th className="p-4 text-left">
+                E-mail
+              </th>
 
-              <th className="p-4 text-center">%</th>
+              <th className="p-4 text-center">
+                %
+              </th>
 
-              <th className="p-4 text-center">Status</th>
+              <th className="p-4 text-center">
+                Status
+              </th>
 
-              <th className="p-4 text-center">Ações</th>
+              <th className="p-4 text-center">
+                Ações
+              </th>
 
             </tr>
 
           </thead>
 
           <tbody>
-
-            {lista.length === 0 ? (
+                        {lista.length === 0 ? (
 
               <tr>
 
@@ -151,7 +167,7 @@ export default function SociosTable() {
 
             ) : (
 
-              lista.map((socio: any) => (
+              lista.map((socio) => (
 
                 <tr
                   key={socio.id}
@@ -209,7 +225,7 @@ export default function SociosTable() {
                     <div className="flex justify-center gap-2">
 
                       <Link
-                        href={`/socios/perfil/${socio.id}`}
+                        href={`/socios/editar/${socio.id}`}
                       >
 
                         <Button
@@ -223,7 +239,7 @@ export default function SociosTable() {
                       </Link>
 
                       <Link
-                        href={`/socios/perfil/${socio.id}?editar=true`}
+                        href={`/socios/editar/${socio.id}`}
                       >
 
                         <Button
@@ -240,7 +256,7 @@ export default function SociosTable() {
                       <Button
                         size="icon"
                         variant="destructive"
-                        onClick={() => apagar(socio.id)}
+                        onClick={() => apagar(socio.id!)}
                       >
 
                         <Trash2 size={17} />
@@ -256,8 +272,7 @@ export default function SociosTable() {
               ))
 
             )}
-
-          </tbody>
+                      </tbody>
 
         </table>
 
@@ -268,3 +283,4 @@ export default function SociosTable() {
   );
 
 }
+          

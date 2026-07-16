@@ -3,15 +3,42 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   updateDoc,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 
+export interface Socio {
+
+  id?: string;
+
+  nome: string;
+
+  cpf: string;
+
+  telefone: string;
+
+  email: string;
+
+  percentual: number;
+
+  pix: string;
+
+  status: string;
+
+  usuario: string;
+
+  senha: string;
+
+  perfil: string;
+
+}
+
 const sociosRef = collection(db, "socios");
 
-export async function listarSocios() {
+export async function listarSocios(): Promise<Socio[]> {
 
   const snapshot = await getDocs(sociosRef);
 
@@ -19,14 +46,14 @@ export async function listarSocios() {
 
     id: docItem.id,
 
-    ...docItem.data(),
+    ...(docItem.data() as Omit<Socio, "id">),
 
   }));
 
 }
 
 export async function criarSocio(
-  socio: any
+  socio: Socio
 ) {
 
   await addDoc(
@@ -38,15 +65,18 @@ export async function criarSocio(
 
 export async function editarSocio(
   id: string,
-  socio: any
+  socio: Socio
 ) {
 
   await updateDoc(
     doc(db, "socios", id),
-    socio
+    {
+      ...socio,
+    }
   );
 
 }
+
 export async function excluirSocio(
   id: string
 ) {
@@ -59,23 +89,23 @@ export async function excluirSocio(
 
 export async function buscarSocio(
   id: string
-) {
+): Promise<Socio | null> {
 
-  const snapshot = await getDocs(
-    sociosRef
-  );
+  const referencia = doc(db, "socios", id);
 
-  const socio = snapshot.docs.find(
-    (docItem) => docItem.id === id
-  );
+  const snapshot = await getDoc(referencia);
 
-  if (!socio) return null;
+  if (!snapshot.exists()) {
+
+    return null;
+
+  }
 
   return {
 
-    id: socio.id,
+    id: snapshot.id,
 
-    ...socio.data(),
+    ...(snapshot.data() as Omit<Socio, "id">),
 
   };
 

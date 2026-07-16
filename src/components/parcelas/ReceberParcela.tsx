@@ -6,25 +6,23 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-import { atualizarParcela } from "@/services/parcelas";
+import { receberParcela } from "@/services/parcelas";
 
 interface Props {
-
   parcela: any;
-
 }
 
 export default function ReceberParcela({
-
   parcela,
-
 }: Props) {
 
   const router = useRouter();
 
-  const [formaPagamento, setFormaPagamento] = useState("PIX");
+  const [formaPagamento, setFormaPagamento] =
+    useState("PIX");
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
   async function receber() {
 
@@ -32,19 +30,23 @@ export default function ReceberParcela({
 
       setLoading(true);
 
-      await atualizarParcela(parcela.id, {
+      await receberParcela(
 
-        status: "PAGA",
+        parcela.id,
 
         formaPagamento,
 
-        dataPagamento: new Date(),
+        new Date().toISOString(),
 
-      });
+        ""
+
+      );
 
       alert("Parcela recebida com sucesso!");
 
       router.refresh();
+
+      router.back();
 
     } catch (error) {
 
@@ -65,129 +67,85 @@ export default function ReceberParcela({
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-6">
 
       <h2 className="text-2xl font-bold text-white">
-
         Receber Parcela
-
       </h2>
 
       <div>
 
-        <Label>
-
-          Cliente
-
-        </Label>
+        <Label>Cliente</Label>
 
         <p className="mt-2 text-white">
-
           {parcela.clienteNome}
-
         </p>
 
       </div>
 
       <div>
 
-        <Label>
-
-          Produto
-
-        </Label>
+        <Label>Produto</Label>
 
         <p className="mt-2 text-white">
-
           {parcela.produtoNome}
-
         </p>
 
       </div>
 
       <div>
 
-        <Label>
-
-          Parcela
-
-        </Label>
+        <Label>Parcela</Label>
 
         <p className="mt-2 text-white">
-
           {parcela.parcela}/{parcela.totalParcelas}
-
         </p>
 
       </div>
 
       <div>
 
-        <Label>
-
-          Valor
-
-        </Label>
+        <Label>Valor</Label>
 
         <p className="mt-2 text-green-400 text-xl font-bold">
 
-          {Number(parcela.valor).toLocaleString("pt-BR", {
-
-            style: "currency",
-
-            currency: "BRL",
-
-          })}
+          {Number(parcela.valor).toLocaleString(
+            "pt-BR",
+            {
+              style: "currency",
+              currency: "BRL",
+            }
+          )}
 
         </p>
 
-      </div>      <div>
+      </div>
 
-        <Label>
+      <div>
 
-          Forma de Pagamento
-
-        </Label>
+        <Label>Forma de Pagamento</Label>
 
         <select
-
           className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 p-3 text-white"
-
           value={formaPagamento}
-
           onChange={(e) =>
-
             setFormaPagamento(e.target.value)
-
           }
-
         >
 
-          <option value="PIX">
-
-            PIX
-
-          </option>
+          <option value="PIX">PIX</option>
 
           <option value="Dinheiro">
-
             Dinheiro
-
           </option>
 
           <option value="Cartão de Débito">
-
             Cartão de Débito
-
           </option>
 
           <option value="Cartão de Crédito">
-
             Cartão de Crédito
-
           </option>
 
           <option value="Transferência">
-
             Transferência
-
           </option>
 
         </select>
@@ -197,13 +155,9 @@ export default function ReceberParcela({
       <div className="grid grid-cols-2 gap-4">
 
         <Button
-
           variant="outline"
-
           onClick={() => router.back()}
-
           disabled={loading}
-
         >
 
           Cancelar
@@ -211,23 +165,20 @@ export default function ReceberParcela({
         </Button>
 
         <Button
-
           onClick={receber}
-
           disabled={loading}
-
         >
 
           {loading
-
             ? "Recebendo..."
-
             : "Confirmar Recebimento"}
 
         </Button>
 
       </div>
 
-    </div>  );
+    </div>
+
+  );
 
 }

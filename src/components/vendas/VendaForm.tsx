@@ -3,67 +3,64 @@
 import { useEffect, useState } from "react";
 
 import { listarClientes } from "@/services/clientes";
-import { listarProdutos, venderProduto } from "@/services/estoque";
+import {
+  listarProdutos,
+  venderProduto,
+} from "@/services/estoque";
 import { criarVenda } from "@/services/vendas";
 import { criarParcela } from "@/services/parcelas";
+import { criarRepasse } from "@/services/repasses";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 import { Cliente } from "@/types/cliente";
 import { Produto } from "@/types/produto";
 
 export default function VendaForm() {
 
-  const hoje = new Date().toISOString().split("T")[0];
+  const [clientes, setClientes] =
+    useState<Cliente[]>([]);
 
-  const proximoMes = new Date();
-
-  proximoMes.setMonth(proximoMes.getMonth() + 1);
-
-  const primeiroVencimento =
-    proximoMes.toISOString().split("T")[0];
-
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-
-  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [produtos, setProdutos] =
+    useState<Produto[]>([]);
 
   const [venda, setVenda] = useState({
 
     clienteId: "",
-
     clienteNome: "",
 
     produtoId: "",
-
     produtoNome: "",
 
     imei: "",
 
     socioId: "",
-
     socioNome: "",
+
+    custoProduto: 0,
 
     valorProduto: 0,
 
-    entrada: "",
+    capitalSocio: 0,
 
-    saldo: 0,
+    capitalEmpresa: 0,
 
-    parcelas: 24,
+    percentualSocio: 0,
+
+    percentualEmpresa: 100,
+
+    entrada: 0,
+
+    parcelas: 12,
 
     valorParcela: 0,
 
-    formaPagamento: "Carnê",
-
-    dataVenda: hoje,
-
-    primeiroVencimento,
-
-    observacao: "",
-
-    status: "ABERTA",
+    primeiroVencimento:
+      new Date()
+        .toISOString()
+        .split("T")[0],
 
   });
 
@@ -75,9 +72,11 @@ export default function VendaForm() {
 
   async function carregarDados() {
 
-    const listaClientes = await listarClientes();
+    const listaClientes =
+      await listarClientes();
 
-    const listaProdutos = await listarProdutos();
+    const listaProdutos =
+      await listarProdutos();
 
     setClientes(listaClientes);
 
@@ -85,7 +84,9 @@ export default function VendaForm() {
 
       listaProdutos.filter(
 
-        (produto) => produto.status === "DISPONIVEL"
+        (p: Produto) =>
+
+          p.status === "DISPONIVEL"
 
       )
 
@@ -93,13 +94,14 @@ export default function VendaForm() {
 
   }
 
-  function selecionarCliente(id: string) {
+  function selecionarCliente(
+    id: string
+  ) {
 
-    const cliente = clientes.find(
-
-      (c) => c.id === id
-
-    );
+    const cliente =
+      clientes.find(
+        (c) => c.id === id
+      );
 
     if (!cliente) return;
 
@@ -107,78 +109,115 @@ export default function VendaForm() {
 
       ...old,
 
-      clienteId: cliente.id || "",
+      clienteId:
+        cliente.id || "",
 
-      clienteNome: cliente.nome,
+      clienteNome:
+        cliente.nome,
 
     }));
 
   }
 
-  function selecionarProduto(id: string) {
+  function selecionarProduto(
+    id: string
+  ) {
 
-    const produto = produtos.find(
-
-      (p) => p.id === id
-
-    );
+    const produto =
+      produtos.find(
+        (p) => p.id === id
+      );
 
     if (!produto) return;
 
-    const valor = Number(produto.venda);
+    const saldo =
+      Number(produto.venda);
 
     setVenda((old) => ({
 
       ...old,
 
-      produtoId: produto.id || "",
+      produtoId:
+        produto.id || "",
 
-      produtoNome: produto.nome,
+      produtoNome:
+        produto.nome,
 
-      imei: produto.imei,
+      imei:
+        produto.imei,
 
-      socioId: produto.socioId,
+      socioId:
+        produto.socioId,
 
-      socioNome: produto.socioNome,
+      socioNome:
+        produto.socioNome,
 
-      valorProduto: valor,
+      custoProduto:
+        Number(produto.custo),
 
-      entrada: "",
+      valorProduto:
+        Number(produto.venda),
 
-      saldo: valor,
+      capitalSocio:
+        Number(produto.capitalSocio || 0),
 
-      valorParcela: valor / old.parcelas,
+      capitalEmpresa:
+        Number(produto.capitalEmpresa || 0),
+
+      percentualSocio:
+        Number(produto.percentualSocio || 0),
+
+      percentualEmpresa:
+        Number(produto.percentualEmpresa || 100),
+
+      entrada: 0,
+
+      valorParcela:
+        saldo /
+        old.parcelas,
 
     }));
 
   }
-    function alterarEntrada(valor: string) {
 
-    const somenteNumero = valor.replace(/\D/g, "");
+  function alterarEntrada(
+    valor: string
+  ) {
 
-    const entrada = Number(somenteNumero);
+    const entrada =
+      Number(valor);
 
-    const saldo = venda.valorProduto - entrada;
+    const saldo =
+      venda.valorProduto -
+      entrada;
 
     setVenda((old) => ({
 
       ...old,
 
-      entrada: somenteNumero,
+      entrada,
 
-      saldo,
-
-      valorParcela: saldo / old.parcelas,
+      valorParcela:
+        saldo /
+        old.parcelas,
 
     }));
 
   }
 
-  function alterarParcelas(valor: string) {
+  function alterarParcelas(
+    valor: string
+  ) {
 
-    const parcelas = Number(valor);
+    const parcelas =
+      Number(valor);
 
-    if (!parcelas) return;
+    if (parcelas <= 0)
+      return;
+
+    const saldo =
+      venda.valorProduto -
+      venda.entrada;
 
     setVenda((old) => ({
 
@@ -186,225 +225,511 @@ export default function VendaForm() {
 
       parcelas,
 
-      valorParcela: old.saldo / parcelas,
+      valorParcela:
+        saldo /
+        parcelas,
 
     }));
 
   }
-
   async function salvarVenda() {
 
-    const entrada = Number(venda.entrada);
+  try {
 
-    if (!venda.clienteId) {
+    const idVenda = await criarVenda({
 
-      alert("Selecione um cliente.");
+      ...venda,
 
-      return;
+      data: new Date(),
 
-    }
+      status: "ATIVA",
 
-    if (!venda.produtoId) {
+    });
 
-      alert("Selecione um produto.");
+    const lucro =
 
-      return;
+      venda.valorProduto -
 
-    }
+      venda.custoProduto;
 
-    if (entrada > venda.valorProduto) {
+    await criarRepasse({
 
-      alert("A entrada não pode ser maior que o valor do produto.");
+      idVenda,
 
-      return;
+      clienteNome:
+        venda.clienteNome,
 
-    }
+      produto:
+        venda.produtoNome,
 
-    try {
+      idProduto:
+        venda.produtoId,
 
-      await criarVenda({
+      idSocio:
+        venda.socioId,
 
-        ...venda,
+      percentualSocio:
+        venda.percentualSocio,
 
-        entrada,
+      valorTotalVenda:
+        venda.valorProduto,
 
-        createdAt: new Date(venda.dataVenda),
+      valorReceber:
+
+        venda.valorProduto -
+
+        venda.entrada,
+
+      capitalInvestido:
+        venda.capitalSocio,
+
+      capitalRecuperado: 0,
+
+      capitalRestante:
+        venda.capitalSocio,
+
+      capitalPorParcela:
+
+        venda.capitalSocio /
+
+        venda.parcelas,
+
+      lucroTotal:
+        lucro,
+
+      lucroSocioPorParcela:
+
+        (
+
+          lucro *
+
+          venda.percentualSocio /
+
+          100
+
+        ) /
+
+        venda.parcelas,
+
+      lucroEmpresaPorParcela:
+
+        (
+
+          lucro -
+
+          (
+
+            lucro *
+
+            venda.percentualSocio /
+
+            100
+
+          )
+
+        ) /
+
+        venda.parcelas,
+
+      socioRecebido: 0,
+
+      empresaRecebido: 0,
+
+      totalSocioReceber:
+
+        venda.capitalSocio +
+
+        (
+
+          lucro *
+
+          venda.percentualSocio /
+
+          100
+
+        ),
+
+      totalEmpresaReceber:
+
+        venda.capitalEmpresa +
+
+        (
+
+          lucro -
+
+          (
+
+            lucro *
+
+            venda.percentualSocio /
+
+            100
+
+          )
+
+        ),
+
+      status: "ATIVO",
+
+      data: new Date(),
+
+    });
+
+    const [ano, mes, dia] =
+  venda.primeiroVencimento
+    .split("-")
+    .map(Number);
+
+const primeira = new Date(
+  ano,
+  mes - 1,
+  dia,
+  12,
+  0,
+  0
+);
+
+    for (
+
+      let i = 1;
+
+      i <= venda.parcelas;
+
+      i++
+
+    ) {
+
+      const vencimento =
+
+        new Date(primeira);
+
+      vencimento.setMonth(
+
+        primeira.getMonth() +
+
+        (i - 1)
+
+      );
+
+      await criarParcela({
+
+        vendaId: idVenda,
+
+        clienteId:
+          venda.clienteId,
+
+        clienteNome:
+          venda.clienteNome,
+
+        produtoId:
+          venda.produtoId,
+
+        produtoNome:
+          venda.produtoNome,
+
+        socioId:
+          venda.socioId,
+
+        socioNome:
+          venda.socioNome,
+
+        parcela: i,
+
+        totalParcelas:
+          venda.parcelas,
+
+        valor:
+
+          Number(
+
+            venda.valorParcela.toFixed(2)
+
+          ),
+
+        vencimento,
+
+        status: "PENDENTE",
+
+        createdAt:
+          new Date(),
 
       });
 
-      await venderProduto(venda.produtoId);
-
-      const dataBase = new Date(venda.primeiroVencimento);
-
-      for (let i = 1; i <= venda.parcelas; i++) {
-
-        const vencimento = new Date(dataBase);
-
-        vencimento.setMonth(
-
-          dataBase.getMonth() + (i - 1)
-
-        );
-
-        await criarParcela({
-
-          clienteNome: venda.clienteNome,
-
-          produtoNome: venda.produtoNome,
-
-          parcela: i,
-
-          totalParcelas: venda.parcelas,
-
-          valor: Number(venda.valorParcela.toFixed(2)),
-
-          vencimento,
-
-          status: "PENDENTE",
-
-          createdAt: new Date(),
-
-        });
-
-      }
-
-      alert("Venda realizada com sucesso!");
-
-      window.location.href = "/vendas";
-
-    } catch (error) {
-
-      console.error(error);
-
-      alert("Erro ao realizar venda.");
-
     }
+await venderProduto(venda.produtoId);
+    alert(
+
+      "Venda realizada com sucesso!"
+
+    );
+
+    window.location.href =
+
+      "/vendas";
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+
+      "Erro ao realizar venda."
+
+    );
 
   }
 
-  return (
+}
+return (
 
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-6">
+  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-6">
 
-      <h2 className="text-2xl font-bold text-white">
+    <h2 className="text-2xl font-bold text-white">
 
-        Nova Venda
+      Nova Venda
 
-      </h2>
-            <div>
+    </h2>
 
-        <Label>Cliente</Label>
+    <div>
 
-        <select
-          className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 p-3 text-white"
-          onChange={(e) => selecionarCliente(e.target.value)}
-        >
+      <Label>Cliente</Label>
 
-          <option value="">
+      <select
+        className="w-full mt-2 rounded-lg border border-zinc-700 bg-zinc-950 p-3 text-white"
+        value={venda.clienteId}
+        onChange={(e) =>
+          selecionarCliente(e.target.value)
+        }
+      >
 
-            Selecione...
+        <option value="">
+          Selecione o cliente
+        </option>
 
+        {clientes.map((cliente) => (
+
+          <option
+            key={cliente.id}
+            value={cliente.id}
+          >
+            {cliente.nome}
           </option>
 
-          {clientes.map((cliente) => (
+        ))}
 
-            <option
-              key={cliente.id}
-              value={cliente.id}
-            >
+      </select>
 
-              {cliente.nome}
+    </div>
 
-            </option>
+    <div>
 
-          ))}
+      <Label>Produto</Label>
 
-        </select>
+      <select
+        className="w-full mt-2 rounded-lg border border-zinc-700 bg-zinc-950 p-3 text-white"
+        value={venda.produtoId}
+        onChange={(e) =>
+          selecionarProduto(e.target.value)
+        }
+      >
 
-      </div>
+        <option value="">
+          Selecione o produto
+        </option>
 
-      <div>
+        {produtos.map((produto) => (
 
-        <Label>Produto</Label>
-
-        <select
-          className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 p-3 text-white"
-          onChange={(e) => selecionarProduto(e.target.value)}
-        >
-
-          <option value="">
-
-            Selecione...
-
+          <option
+            key={produto.id}
+            value={produto.id}
+          >
+            {produto.nome}
           </option>
 
-          {produtos.map((produto) => (
+        ))}
 
-            <option
-              key={produto.id}
-              value={produto.id}
-            >
+      </select>
 
-              {produto.nome}
+    </div>
 
-            </option>
+    {
 
-          ))}
+      venda.produtoId && (
 
-        </select>
+        <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-5 space-y-2">
 
-      </div>
-
-      {venda.produtoId && (
-
-        <div className="rounded-xl border border-blue-700 bg-blue-950/20 p-5 space-y-2">
-
-          <h3 className="text-lg font-bold text-blue-400">
-
-            Informações do Aparelho
-
-          </h3>
-
-          <p className="text-zinc-300">
+          <p className="text-white">
 
             <strong>Produto:</strong> {venda.produtoNome}
 
           </p>
 
-          <p className="text-zinc-300">
+          <p className="text-white">
 
             <strong>IMEI:</strong> {venda.imei}
 
           </p>
 
-          <p className="text-zinc-300">
+          <p className="text-white">
 
-            <strong>Proprietário:</strong> 👤 {venda.socioNome}
+            <strong>Investidor:</strong> {venda.socioNome}
 
           </p>
 
           <p className="text-green-400 font-bold">
 
-            Valor: R$ {venda.valorProduto.toFixed(2)}
+            Valor da venda:
+            {" "}
+            R$ {venda.valorProduto.toFixed(2)}
 
           </p>
 
         </div>
 
-      )}
+      )
 
-      <div className="flex justify-end">
+    }
 
-        <Button onClick={salvarVenda}>
+    <div className="grid grid-cols-3 gap-4">
 
-          Finalizar Venda
+      <div>
 
-        </Button>
+        <Label>Entrada</Label>
+
+        <Input
+          type="number"
+          value={venda.entrada}
+          onChange={(e) =>
+            alterarEntrada(e.target.value)
+          }
+        />
+
+      </div>
+
+      <div>
+
+        <Label>Parcelas</Label>
+
+        <Input
+          type="number"
+          value={venda.parcelas}
+          onChange={(e) =>
+            alterarParcelas(e.target.value)
+          }
+        />
+
+      </div>
+
+      <div>
+
+        <Label>Primeiro Vencimento</Label>
+
+        <Input
+          type="date"
+          value={venda.primeiroVencimento}
+          onChange={(e) =>
+            setVenda((old) => ({
+
+              ...old,
+
+              primeiroVencimento:
+                e.target.value,
+
+            }))
+          }
+        />
 
       </div>
 
     </div>
 
-  );
+    <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-5 space-y-3">
+
+      <div className="flex justify-between">
+
+        <span className="text-zinc-400">
+
+          Valor da Venda
+
+        </span>
+
+        <span className="text-green-400 font-bold">
+
+          R$ {venda.valorProduto.toFixed(2)}
+
+        </span>
+
+      </div>
+
+      <div className="flex justify-between">
+
+        <span className="text-zinc-400">
+
+          Entrada
+
+        </span>
+
+        <span className="text-white">
+
+          R$ {venda.entrada.toFixed(2)}
+
+        </span>
+
+      </div>
+
+      <div className="flex justify-between">
+
+        <span className="text-zinc-400">
+
+          Saldo
+
+        </span>
+
+        <span className="text-yellow-400 font-bold">
+
+          R$
+
+          {" "}
+
+          {(venda.valorProduto - venda.entrada).toFixed(2)}
+
+        </span>
+
+      </div>
+
+      <div className="flex justify-between">
+
+        <span className="text-zinc-400">
+
+          Valor da Parcela
+
+        </span>
+
+        <span className="text-cyan-400 font-bold">
+
+          R$
+
+          {" "}
+
+          {venda.valorParcela.toFixed(2)}
+
+        </span>
+
+      </div>
+
+    </div>
+
+    <Button
+      className="w-full"
+      onClick={salvarVenda}
+    >
+
+      Finalizar Venda
+
+    </Button>
+
+  </div>
+
+);
 
 }

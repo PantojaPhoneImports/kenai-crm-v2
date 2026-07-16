@@ -153,13 +153,15 @@ export default function ClienteResumo({
 
         <p className="text-xl font-bold text-white mt-2">
 
-          {proximo instanceof Date
+  {proximo
 
-            ? proximo.toLocaleDateString("pt-BR")
+    ? new Intl.DateTimeFormat("pt-BR", {
+        timeZone: "America/Belem",
+      }).format(proximo)
 
-            : "--/--/----"}
+    : "--/--/----"}
 
-        </p>
+</p>
 
       </div>
 

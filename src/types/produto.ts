@@ -30,4 +30,12 @@ export interface Produto {
 
   socioNome: string;
 
+  capitalSocio: number;
+
+  capitalEmpresa: number;
+
+  percentualSocio: number;
+
+  percentualEmpresa: number;
+
 }
