@@ -21,31 +21,25 @@ export default function ProdutoEditarForm() {
   const [loading, setLoading] = useState(true);
 
   const [produto, setProduto] = useState<Produto>({
-
   nome: "",
-
   imei: "",
-
   marca: "",
-
   modelo: "",
-
   cor: "",
-
   capacidade: "",
-
   fornecedor: "",
-
   custo: 0,
-
   venda: 0,
+
+  capitalSocio: 0,
+  capitalEmpresa: 0,
+  percentualSocio: 0,
+  percentualEmpresa: 100,
 
   status: "DISPONIVEL",
 
   socioId: "",
-
   socioNome: "",
-
 });
 
   useEffect(() => {
@@ -63,31 +57,25 @@ export default function ProdutoEditarForm() {
     if (!encontrado) return;
 
     setProduto({
-
   nome: encontrado.nome || "",
-
   imei: encontrado.imei || "",
-
   marca: encontrado.marca || "",
-
   modelo: encontrado.modelo || "",
-
   cor: encontrado.cor || "",
-
   capacidade: encontrado.capacidade || "",
-
   fornecedor: encontrado.fornecedor || "",
-
   custo: encontrado.custo || 0,
-
   venda: encontrado.venda || 0,
+
+  capitalSocio: encontrado.capitalSocio || 0,
+  capitalEmpresa: encontrado.capitalEmpresa || 0,
+  percentualSocio: encontrado.percentualSocio || 0,
+  percentualEmpresa: encontrado.percentualEmpresa || 100,
 
   status: encontrado.status || "DISPONIVEL",
 
   socioId: encontrado.socioId || "",
-
   socioNome: encontrado.socioNome || "",
-
 });
 
     setLoading(false);
