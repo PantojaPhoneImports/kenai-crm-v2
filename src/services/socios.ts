@@ -34,6 +34,8 @@ export interface Socio {
 
   perfil: string;
 
+  tipo: "PARCEIRO" | "INVESTIDOR";
+
 }
 
 const sociosRef = collection(db, "socios");

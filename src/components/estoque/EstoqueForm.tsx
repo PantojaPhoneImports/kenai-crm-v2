@@ -1,5 +1,5 @@
 "use client";
-
+import { Produto } from "@/types/produto";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -20,7 +20,7 @@ export default function EstoqueForm() {
 
 
   const [produto, setProduto] =
-    useState({
+  useState<Produto>({
 
       nome: "",
 
@@ -45,7 +45,7 @@ export default function EstoqueForm() {
       socioId: "",
 
       socioNome: "",
-
+tipoSocio: "PARCEIRO",
 
       capitalSocio: 0,
 
@@ -359,7 +359,8 @@ export default function EstoqueForm() {
 
               socioNome:
                 socio?.nome || "",
-
+tipoSocio:
+  (socio?.tipo as "PARCEIRO" | "INVESTIDOR") || "PARCEIRO",
             }));
 
           }}

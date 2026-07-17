@@ -9,6 +9,8 @@ import {
   buscarSocio,
 } from "@/services/socios";
 
+import type { Socio } from "@/services/socios";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -23,9 +25,10 @@ export default function SocioForm({
 
   const router = useRouter();
 
-  const [carregando, setCarregando] = useState(false);
+  const [carregando, setCarregando] =
+    useState(false);
 
-  const [socio, setSocio] = useState({
+  const [socio, setSocio] = useState<Socio>({
 
     nome: "",
 
@@ -47,6 +50,8 @@ export default function SocioForm({
 
     perfil: "SOCIO",
 
+    tipo: "PARCEIRO",
+
   });
 
   useEffect(() => {
@@ -61,31 +66,47 @@ export default function SocioForm({
 
     setCarregando(true);
 
-    const dados = await buscarSocio(id!);
+    const dados =
+      await buscarSocio(id!);
 
     if (dados) {
 
       setSocio({
 
-        nome: dados.nome || "",
+        nome:
+          dados.nome || "",
 
-        cpf: dados.cpf || "",
+        cpf:
+          dados.cpf || "",
 
-        telefone: dados.telefone || "",
+        telefone:
+          dados.telefone || "",
 
-        email: dados.email || "",
+        email:
+          dados.email || "",
 
-        percentual: Number(dados.percentual || 0),
+        percentual:
+          Number(
+            dados.percentual || 0
+          ),
 
-        pix: dados.pix || "",
+        pix:
+          dados.pix || "",
 
-        status: dados.status || "ATIVO",
+        status:
+          dados.status || "ATIVO",
 
-        usuario: dados.usuario || "",
+        usuario:
+          dados.usuario || "",
 
-        senha: dados.senha || "",
+        senha:
+          dados.senha || "",
 
-        perfil: dados.perfil || "SOCIO",
+        perfil:
+          dados.perfil || "SOCIO",
+
+        tipo:
+          dados.tipo || "PARCEIRO",
 
       });
 
@@ -96,18 +117,25 @@ export default function SocioForm({
   }
 
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement |
+      HTMLSelectElement
+    >
   ) {
 
-    const { name, value } = e.target;
+    const { name, value } =
+      e.target;
 
     setSocio((old) => ({
 
       ...old,
 
       [name]:
+
         name === "percentual"
+
           ? Number(value)
+
           : value,
 
     }));
@@ -118,15 +146,24 @@ export default function SocioForm({
 
     if (id) {
 
-      await editarSocio(id, socio);
+      await editarSocio(
+        id,
+        socio
+      );
 
-      alert("Sócio atualizado com sucesso!");
+      alert(
+        "Sócio atualizado com sucesso!"
+      );
 
     } else {
 
-      await criarSocio(socio);
+      await criarSocio(
+        socio
+      );
 
-      alert("Sócio cadastrado com sucesso!");
+      alert(
+        "Sócio cadastrado com sucesso!"
+      );
 
     }
 
@@ -137,9 +174,13 @@ export default function SocioForm({
   if (carregando) {
 
     return (
+
       <div className="text-white">
+
         Carregando...
+
       </div>
+
     );
 
   }
@@ -150,7 +191,9 @@ export default function SocioForm({
 
       <h2 className="text-2xl font-bold text-white">
 
-        {id ? "Editar Sócio" : "Novo Sócio"}
+        {id
+          ? "Editar Sócio"
+          : "Novo Sócio"}
 
       </h2>
 
@@ -224,7 +267,7 @@ export default function SocioForm({
 
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-3 gap-6">
 
         <div>
 
@@ -265,6 +308,33 @@ export default function SocioForm({
 
         </div>
 
+        <div>
+
+          <Label>Tipo de Sócio</Label>
+
+          <select
+            name="tipo"
+            value={socio.tipo}
+            onChange={handleChange}
+            className="w-full h-10 rounded-md border border-zinc-700 bg-zinc-950 px-3 text-white"
+          >
+
+            <option value="PARCEIRO">
+
+              Parceiro
+
+            </option>
+
+            <option value="INVESTIDOR">
+
+              Investidor
+
+            </option>
+
+          </select>
+
+        </div>
+
       </div>
 
       <hr className="border-zinc-800" />
@@ -273,9 +343,7 @@ export default function SocioForm({
 
         Acesso ao Sistema
 
-      </h3>
-
-      <div className="grid grid-cols-3 gap-6">
+      </h3>      <div className="grid grid-cols-3 gap-6">
 
         <div>
 
@@ -331,6 +399,39 @@ export default function SocioForm({
 
       </div>
 
+      <div className="rounded-xl border border-blue-800 bg-blue-950/20 p-5">
+
+        <h4 className="text-blue-300 font-semibold">
+
+          Informações do Tipo de Sócio
+
+        </h4>
+
+        {socio.tipo === "PARCEIRO" ? (
+
+          <p className="text-zinc-300 mt-3 text-sm leading-6">
+
+            O parceiro participa dos investimentos e da divisão dos lucros
+            conforme o percentual definido. No futuro ele terá acesso apenas
+            aos clientes, produtos, vendas e parcelas vinculados ao próprio
+            usuário.
+
+          </p>
+
+        ) : (
+
+          <p className="text-zinc-300 mt-3 text-sm leading-6">
+
+            O investidor acompanha apenas o capital investido, o capital
+            recuperado, o saldo restante e os aparelhos vinculados a ele.
+            Ele não visualizará informações financeiras dos demais sócios.
+
+          </p>
+
+        )}
+
+      </div>
+
       <div className="flex justify-end gap-3">
 
         <Button
@@ -346,7 +447,9 @@ export default function SocioForm({
           onClick={salvar}
         >
 
-          {id ? "Atualizar Sócio" : "Salvar Sócio"}
+          {id
+            ? "Atualizar Sócio"
+            : "Salvar Sócio"}
 
         </Button>
 

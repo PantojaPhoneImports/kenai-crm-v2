@@ -202,39 +202,59 @@ const parteEmpresa =
 
     {
 
-      socioRecebido:
+  socioRecebido:
 
-        Number(
-          repasse.socioRecebido || 0
-        )
-        +
-        parteSocio,
+    Number(
+      repasse.socioRecebido || 0
+    )
+    +
+    parteSocio,
 
+  empresaRecebido:
 
-      empresaRecebido:
+    Number(
+      repasse.empresaRecebido || 0
+    )
+    +
+    parteEmpresa,
 
-        Number(
-          repasse.empresaRecebido || 0
-        )
-        +
-        parteEmpresa,
+  capitalRecuperado:
 
+    Number(
+      repasse.capitalRecuperado || 0
+    )
+    +
+    capitalParcela,
 
-      valorReceber:
+  capitalRestante:
 
-        Math.max(
+    Math.max(
 
-          Number(
-            repasse.valorReceber || 0
-          )
-          -
-          valorParcela,
+      Number(
+        repasse.capitalRestante || 0
+      )
+      -
+      capitalParcela,
 
-          0
+      0
 
-        ),
+    ),
 
-    }
+  valorReceber:
+
+    Math.max(
+
+      Number(
+        repasse.valorReceber || 0
+      )
+      -
+      valorParcela,
+
+      0
+
+    ),
+
+}
 
   );
 

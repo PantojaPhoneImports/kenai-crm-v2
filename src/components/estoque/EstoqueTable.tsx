@@ -84,7 +84,7 @@ export default function EstoqueTable() {
 
             <th className="p-4 text-left text-zinc-300">
 
-              Proprietário
+              Investidor
 
             </th>
 
@@ -158,7 +158,7 @@ export default function EstoqueTable() {
 
                   <span className="text-zinc-500">
 
-                    Sem proprietário
+                    Empresa
 
                   </span>
 
@@ -224,18 +224,21 @@ export default function EstoqueTable() {
 
                   </Link>
 
-                  <Link href="/vendas/nova">
+                  {produto.status === "DISPONIVEL" && (
 
-                    <button
-                      className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm transition"
-                      disabled={produto.status !== "DISPONIVEL"}
-                    >
+  <Link href="/vendas/nova">
 
-                      Vender
+    <button
+      className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm"
+    >
 
-                    </button>
+      Vender
 
-                  </Link>
+    </button>
+
+  </Link>
+
+)}
 
                   <button
                     onClick={() => apagar(produto.id!)}

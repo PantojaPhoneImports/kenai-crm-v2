@@ -39,7 +39,10 @@ export default function ProdutoEditarForm() {
   status: "DISPONIVEL",
 
   socioId: "",
-  socioNome: "",
+
+socioNome: "",
+
+tipoSocio: "PARCEIRO",
 });
 
   useEffect(() => {
@@ -76,6 +79,7 @@ export default function ProdutoEditarForm() {
 
   socioId: encontrado.socioId || "",
   socioNome: encontrado.socioNome || "",
+  tipoSocio: encontrado.tipoSocio || "PARCEIRO",
 });
 
     setLoading(false);

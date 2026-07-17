@@ -30,6 +30,8 @@ export interface Produto {
 
   socioNome: string;
 
+  tipoSocio: "PARCEIRO" | "INVESTIDOR";
+
   capitalSocio: number;
 
   capitalEmpresa: number;

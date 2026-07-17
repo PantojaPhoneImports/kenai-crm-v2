@@ -12,9 +12,27 @@ export interface Venda {
 
   imei: string;
 
+  socioId: string;
+
+  socioNome: string;
+
+  tipoSocio: "PARCEIRO" | "INVESTIDOR";
+
   valorProduto: number;
 
+  custoProduto: number;
+
+  capitalSocio: number;
+
+  capitalEmpresa: number;
+
+  percentualSocio: number;
+
+  percentualEmpresa: number;
+
   entrada: number;
+
+  entradaDestino: "SOCIO" | "EMPRESA";
 
   saldo: number;
 
@@ -28,4 +46,5 @@ export interface Venda {
     | "ABERTA"
     | "FINALIZADA"
     | "CANCELADA";
+
 }

@@ -38,7 +38,7 @@ export default function VendaForm() {
 
     socioId: "",
     socioNome: "",
-
+entradaPara: "SOCIO",
     custoProduto: 0,
 
     valorProduto: 0,
@@ -53,7 +53,9 @@ export default function VendaForm() {
 
     entrada: 0,
 
-    parcelas: 12,
+entradaDestino: "SOCIO",
+
+parcelas: 12,
 
     valorParcela: 0,
 
@@ -151,6 +153,9 @@ export default function VendaForm() {
 
       socioNome:
         produto.socioNome,
+        tipoSocio:
+
+  produto.tipoSocio,
 
       custoProduto:
         Number(produto.custo),
@@ -239,7 +244,8 @@ export default function VendaForm() {
     const idVenda = await criarVenda({
 
       ...venda,
-
+entradaDestino:
+  venda.entradaDestino,
       data: new Date(),
 
       status: "ATIVA",
@@ -252,47 +258,63 @@ export default function VendaForm() {
 
       venda.custoProduto;
 
-    await criarRepasse({
+    const entradaSocio =
+  venda.entradaDestino === "SOCIO"
+    ? venda.entrada
+    : 0;
 
-      idVenda,
+const capitalRestante =
 
-      clienteNome:
-        venda.clienteNome,
+  Math.max(
 
-      produto:
-        venda.produtoNome,
+    venda.capitalSocio -
 
-      idProduto:
-        venda.produtoId,
+    entradaSocio,
 
-      idSocio:
-        venda.socioId,
+    0
 
-      percentualSocio:
-        venda.percentualSocio,
+  );
 
-      valorTotalVenda:
-        venda.valorProduto,
+await criarRepasse({
 
-      valorReceber:
+  idVenda,
 
-        venda.valorProduto -
+  clienteNome:
+    venda.clienteNome,
 
-        venda.entrada,
+  produto:
+    venda.produtoNome,
 
-      capitalInvestido:
-        venda.capitalSocio,
+  idProduto:
+    venda.produtoId,
 
-      capitalRecuperado: 0,
+  idSocio:
+    venda.socioId,
 
-      capitalRestante:
-        venda.capitalSocio,
+  percentualSocio:
+    venda.percentualSocio,
 
-      capitalPorParcela:
+  valorTotalVenda:
+    venda.valorProduto,
 
-        venda.capitalSocio /
+  valorReceber:
+    venda.valorProduto -
+    venda.entrada,
 
-        venda.parcelas,
+  capitalInvestido:
+    venda.capitalSocio,
+
+  capitalRecuperado:
+    entradaSocio,
+
+  capitalRestante:
+    capitalRestante,
+
+  capitalPorParcela:
+
+    capitalRestante /
+
+    venda.parcelas,
 
       lucroTotal:
         lucro,
@@ -594,17 +616,61 @@ return (
 
       <div>
 
-        <Label>Entrada</Label>
+  <Label>Entrada</Label>
 
-        <Input
-          type="number"
-          value={venda.entrada}
-          onChange={(e) =>
-            alterarEntrada(e.target.value)
-          }
-        />
+  <Input
+    type="number"
+    value={venda.entrada}
+    onChange={(e) =>
+      alterarEntrada(e.target.value)
+    }
+  />
 
-      </div>
+  <div className="mt-4">
+
+    <Label>
+
+      Entrada pertence a
+
+    </Label>
+
+    <select
+
+      className="w-full mt-2 rounded-lg bg-zinc-950 border border-zinc-700 p-3 text-white"
+
+      value={venda.entradaDestino}
+
+      onChange={(e) =>
+
+        setVenda((old) => ({
+
+          ...old,
+
+          entradaDestino: e.target.value,
+
+        }))
+
+      }
+
+    >
+
+      <option value="SOCIO">
+
+        Sócio
+
+      </option>
+
+      <option value="EMPRESA">
+
+        Empresa
+
+      </option>
+
+    </select>
+
+  </div>
+
+</div>
 
       <div>
 
