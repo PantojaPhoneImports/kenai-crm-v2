@@ -57,30 +57,23 @@ export default function Sidebar() {
         <div className="flex justify-center">
 
           <Image
-
-            src="/logo.png"
-
-            alt="Pantoja Phone Imports"
-
-            width={170}
-
-            height={170}
-
-            priority
-
-            className="object-contain"
-
-          />
+  src="/logo.png"
+  alt="Pantoja Phone Imports"
+  width={190}
+  height={190}
+  priority
+  className="mx-auto object-contain select-none"
+/>
 
         </div>
 
-        <h1 className="text-center text-2xl font-bold text-white mt-5">
+        <h1 className="text-center text-3xl font-bold tracking-wide text-white mt-4">
 
           KENAI CRM
 
         </h1>
 
-        <p className="text-center text-sm text-zinc-500 mt-1">
+        <p className="text-center text-zinc-400 text-sm mt-1 tracking-wide">
 
           by Pantoja Phone Imports
 
