@@ -292,7 +292,7 @@ await criarRepasse({
 
   socioNome: venda.socioNome,
 
-  tipoSocio: venda.tipoSocio,
+  
 tipoSocio: "PARCEIRO",
   percentualSocio: venda.percentualSocio,
 
