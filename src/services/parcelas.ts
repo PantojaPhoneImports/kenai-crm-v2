@@ -196,84 +196,60 @@ const parteEmpresa =
 
 
 
-  await atualizarRepasse(
+  const novoCapitalRecuperado =
+  Number(repasse.capitalRecuperado || 0) +
+  capitalParcela;
 
-    repasse.id,
-
-    {
-
-  socioRecebido:
-
-    Number(
-      repasse.socioRecebido || 0
-    )
-    +
-    parteSocio,
-
-  empresaRecebido:
-
-    Number(
-      repasse.empresaRecebido || 0
-    )
-    +
-    parteEmpresa,
-
-  capitalRecuperado:
-
-    Number(
-      repasse.capitalRecuperado || 0
-    )
-    +
+const novoCapitalRestante =
+  Math.max(
+    Number(repasse.capitalRestante || 0) -
     capitalParcela,
-
-  capitalRestante:
-
-    Math.max(
-
-      Number(
-        repasse.capitalRestante || 0
-      )
-      -
-      capitalParcela,
-
-      0
-
-    ),
-
-  valorReceber:
-
-    Math.max(
-
-      Number(
-        repasse.valorReceber || 0
-      )
-      -
-      valorParcela,
-
-      0
-
-    ),
-
-}
-
+    0
   );
 
+const novoSocioRecebido =
+  Number(repasse.socioRecebido || 0) +
+  parteSocio;
+
+const novaEmpresaRecebido =
+  Number(repasse.empresaRecebido || 0) +
+  parteEmpresa;
+
+const novoValorReceber =
+  Math.max(
+    Number(repasse.valorReceber || 0) -
+    valorParcela,
+    0
+  );
+
+await atualizarRepasse(repasse.id, {
+
+  socioRecebido: novoSocioRecebido,
+
+  empresaRecebido: novaEmpresaRecebido,
+
+  capitalRecuperado: novoCapitalRecuperado,
+
+  capitalRestante: novoCapitalRestante,
+
+  valorReceber: novoValorReceber,
+
+  status:
+    novoValorReceber <= 0
+      ? "FINALIZADO"
+      : "ATIVO",
+
+});
+
 }
-
-
-
 export async function excluirParcela(
-  id:string
-){
-
+  id: string
+) {
   await deleteDoc(
-
     doc(
       db,
       "parcelas",
       id
     )
-
   );
-
 }

@@ -70,3 +70,16 @@ export async function atualizarRepasse(
     dados
   );
 }
+export async function listarRepasses() {
+
+  const snapshot = await getDocs(repassesRef);
+
+  return snapshot.docs.map((docItem) => ({
+
+    id: docItem.id,
+
+    ...docItem.data(),
+
+  }));
+
+}

@@ -5,7 +5,7 @@ import {
 
 import { db } from "@/lib/firebase";
 
-export async function carregarDashboard() {
+export async function carregarDashboard(usuario?: any) {
 
   try {
 
@@ -29,45 +29,88 @@ export async function carregarDashboard() {
       collection(db, "socios")
     );
 
-    console.log("Clientes:", clientes.size);
-    console.log("Estoque:", estoque.size);
-    console.log("Vendas:", vendas.size);
-    console.log("Parcelas:", parcelas.size);
-    console.log("Sócios:", socios.size);
+    let listaClientes = clientes.docs.map((d) => d.data());
 
-    const produtos = estoque.docs.map((d) => d.data());
+    let listaEstoque = estoque.docs.map((d) => d.data());
 
-    const valorInvestido = produtos.reduce(
+    let listaVendas = vendas.docs.map((d) => d.data());
+
+    let listaParcelas = parcelas.docs.map((d) => d.data());
+
+    console.log("==================================");
+    console.log("USUARIO:", usuario);
+    console.log("SOCIO ID:", usuario?.socioId);
+
+    console.log("ANTES DO FILTRO");
+    console.log("Clientes:", listaClientes.length);
+    console.log("Estoque:", listaEstoque.length);
+    console.log("Vendas:", listaVendas.length);
+    console.log("Parcelas:", listaParcelas.length);
+
+    if (usuario?.perfil === "SOCIO") {
+
+      listaClientes = listaClientes.filter(
+        (item: any) => item.socioId === usuario.socioId
+      );
+
+      listaEstoque = listaEstoque.filter(
+        (item: any) => item.socioId === usuario.socioId
+      );
+
+      listaVendas = listaVendas.filter(
+        (item: any) => item.socioId === usuario.socioId
+      );
+
+      listaParcelas = listaParcelas.filter(
+        (item: any) => item.socioId === usuario.socioId
+      );
+
+    }
+
+    console.log("DEPOIS DO FILTRO");
+    console.log("Clientes:", listaClientes.length);
+    console.log("Estoque:", listaEstoque.length);
+    console.log("Vendas:", listaVendas.length);
+    console.log("Parcelas:", listaParcelas.length);
+    console.log("==================================");
+
+    const valorInvestido = listaEstoque.reduce(
       (total: number, produto: any) =>
         total + Number(produto.custo || 0),
       0
     );
 
-    const valorEstoque = produtos.reduce(
+    const valorEstoque = listaEstoque.reduce(
       (total: number, produto: any) =>
         total + Number(produto.venda || 0),
       0
     );
 
-    const faturamento = vendas.docs.reduce(
+    const faturamento = listaVendas.reduce(
       (total: number, venda: any) =>
-        total + Number(venda.data().valorProduto || 0),
+        total + Number(venda.valorProduto || 0),
       0
     );
 
-    const parcelasPendentes = parcelas.docs.filter(
-      (p) => p.data().status === "PENDENTE"
+    const parcelasPendentes = listaParcelas.filter(
+      (p: any) => p.status === "PENDENTE"
     ).length;
 
     return {
-      clientes: clientes.size,
-      estoque: estoque.size,
-      vendas: vendas.size,
-      socios: socios.size,
+
+      clientes: listaClientes.length,
+      estoque: listaEstoque.length,
+      vendas: listaVendas.length,
+
+      socios: usuario?.perfil === "SOCIO"
+        ? 0
+        : socios.size,
+
       parcelasPendentes,
       valorInvestido,
       valorEstoque,
       faturamento,
+
     };
 
   } catch (erro) {
@@ -75,6 +118,7 @@ export async function carregarDashboard() {
     console.error("ERRO DASHBOARD:", erro);
 
     return {
+
       clientes: 0,
       estoque: 0,
       vendas: 0,
@@ -83,6 +127,7 @@ export async function carregarDashboard() {
       valorInvestido: 0,
       valorEstoque: 0,
       faturamento: 0,
+
     };
 
   }

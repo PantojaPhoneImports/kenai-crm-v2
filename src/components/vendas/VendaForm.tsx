@@ -1,5 +1,5 @@
 "use client";
-
+import { buscarSocio } from "@/services/socios";
 import { useEffect, useState } from "react";
 
 import { listarClientes } from "@/services/clientes";
@@ -50,7 +50,7 @@ entradaPara: "SOCIO",
     percentualSocio: 0,
 
     percentualEmpresa: 100,
-
+percentualLucro: 100,
     entrada: 0,
 
 entradaDestino: "SOCIO",
@@ -121,7 +121,7 @@ parcelas: 12,
 
   }
 
-  function selecionarProduto(
+  async function selecionarProduto(
     id: string
   ) {
 
@@ -129,7 +129,9 @@ parcelas: 12,
       produtos.find(
         (p) => p.id === id
       );
-
+const socio = produto?.socioId
+  ? await buscarSocio(produto.socioId)
+  : null;
     if (!produto) return;
 
     const saldo =
@@ -174,7 +176,8 @@ parcelas: 12,
 
       percentualEmpresa:
         Number(produto.percentualEmpresa || 100),
-
+percentualLucro:
+  Number(socio?.percentualLucro || 100),
       entrada: 0,
 
       valorParcela:
@@ -279,20 +282,22 @@ await criarRepasse({
 
   idVenda,
 
-  clienteNome:
-    venda.clienteNome,
+  clienteNome: venda.clienteNome,
 
-  produto:
-    venda.produtoNome,
+  produto: venda.produtoNome,
 
-  idProduto:
-    venda.produtoId,
+  idProduto: venda.produtoId,
 
-  idSocio:
-    venda.socioId,
+  socioId: venda.socioId,
 
-  percentualSocio:
-    venda.percentualSocio,
+  socioNome: venda.socioNome,
+
+  tipoSocio: venda.tipoSocio,
+tipoSocio: "PARCEIRO",
+  percentualSocio: venda.percentualSocio,
+
+  percentualLucro: venda.percentualLucro,
+
 
   valorTotalVenda:
     venda.valorProduto,
@@ -319,39 +324,29 @@ await criarRepasse({
       lucroTotal:
         lucro,
 
-      lucroSocioPorParcela:
+      
+lucroSocioPorParcela:
 
-        (
-
-          lucro *
-
-          venda.percentualSocio /
-
-          100
-
-        ) /
-
-        venda.parcelas,
+(
+  lucro *
+  venda.percentualLucro /
+  100
+) /
+venda.parcelas,
 
       lucroEmpresaPorParcela:
 
-        (
+(
+  lucro -
 
-          lucro -
+  (
+    lucro *
+    venda.percentualLucro /
+    100
+  )
 
-          (
-
-            lucro *
-
-            venda.percentualSocio /
-
-            100
-
-          )
-
-        ) /
-
-        venda.parcelas,
+) /
+venda.parcelas,
 
       socioRecebido: 0,
 
@@ -359,37 +354,28 @@ await criarRepasse({
 
       totalSocioReceber:
 
-        venda.capitalSocio +
+venda.capitalSocio +
 
-        (
-
-          lucro *
-
-          venda.percentualSocio /
-
-          100
-
-        ),
+(
+  lucro *
+  venda.percentualLucro /
+  100
+),
 
       totalEmpresaReceber:
 
-        venda.capitalEmpresa +
+venda.capitalEmpresa +
 
-        (
+(
+  lucro -
 
-          lucro -
+  (
+    lucro *
+    venda.percentualLucro /
+    100
+  )
 
-          (
-
-            lucro *
-
-            venda.percentualSocio /
-
-            100
-
-          )
-
-        ),
+),
 
       status: "ATIVO",
 

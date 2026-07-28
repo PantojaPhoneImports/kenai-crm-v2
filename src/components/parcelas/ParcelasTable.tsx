@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 import {
   listarParcelas,
   excluirParcela,
@@ -14,18 +16,36 @@ import CentralCobrancas from "./CentralCobrancas";
 
 export default function ParcelasTable() {
 
+  const { usuario } = useAuth();
+
   const [parcelas, setParcelas] = useState<any[]>([]);
   const [busca, setBusca] = useState("");
 
   useEffect(() => {
 
-    carregar();
+    if (usuario) {
 
-  }, []);
+      carregar();
+
+    }
+
+  }, [usuario]);
 
   async function carregar() {
 
-    const dados = await listarParcelas();
+    let dados = await listarParcelas();
+
+    if (usuario?.perfil === "SOCIO") {
+
+      dados = dados.filter(
+
+        (parcela: any) =>
+
+          parcela.socioId === usuario.id
+
+      );
+
+    }
 
     dados.sort((a: any, b: any) => {
 
@@ -204,7 +224,8 @@ export default function ParcelasTable() {
     return Object.values(mapa);
 
   },[parcelas,busca]);
-    return (
+
+  return (
 
     <div className="space-y-8">
 

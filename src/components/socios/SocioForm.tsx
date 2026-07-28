@@ -40,7 +40,9 @@ export default function SocioForm({
 
     percentual: 0,
 
-    pix: "",
+percentualLucro: 100,
+
+pix: "",
 
     status: "ATIVO",
 
@@ -84,11 +86,11 @@ export default function SocioForm({
 
         email:
           dados.email || "",
-
-        percentual:
-          Number(
-            dados.percentual || 0
-          ),
+percentual: Number(dados.percentual || 0),
+        percentualLucro:
+Number(
+dados.percentualLucro || 100
+),
 
         pix:
           dados.pix || "",
@@ -132,7 +134,7 @@ export default function SocioForm({
 
       [name]:
 
-        name === "percentual"
+        ["percentual","percentualLucro"].includes(name)
 
           ? Number(value)
 
@@ -264,7 +266,18 @@ export default function SocioForm({
           />
 
         </div>
+<div>
 
+  <Label>Participação no Lucro (%)</Label>
+
+  <Input
+    type="number"
+    name="percentualLucro"
+    value={socio.percentualLucro}
+    onChange={handleChange}
+  />
+
+</div>
       </div>
 
       <div className="grid grid-cols-3 gap-6">

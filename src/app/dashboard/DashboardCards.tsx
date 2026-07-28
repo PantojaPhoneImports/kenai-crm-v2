@@ -11,6 +11,8 @@ import {
   Smartphone,
 } from "lucide-react";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 import { listarClientes } from "@/services/clientes";
 import { listarProdutos } from "@/services/estoque";
 import { listarVendas } from "@/services/vendas";
@@ -18,45 +20,76 @@ import { listarParcelas } from "@/services/parcelas";
 
 export default function DashboardCards() {
 
+  const { usuario } = useAuth();
+
   const [clientes, setClientes] = useState(0);
   const [estoque, setEstoque] = useState(0);
   const [vendas, setVendas] = useState(0);
   const [receber, setReceber] = useState(0);
 
   useEffect(() => {
+
+    if (!usuario) return;
+
     carregarDashboard();
-  }, []);
+
+  }, [usuario]);
 
   async function carregarDashboard() {
-
-    const listaClientes = await listarClientes();
+        const listaClientes = await listarClientes();
     const listaProdutos = await listarProdutos();
     const listaVendas = await listarVendas();
     const listaParcelas = await listarParcelas();
 
-    setClientes(listaClientes.length);
+    let clientesFiltrados: any[] = listaClientes;
+    let produtosFiltrados: any[] = listaProdutos;
+    let vendasFiltradas: any[] = listaVendas;
+    let parcelasFiltradas: any[] = listaParcelas;
 
-    const disponiveis = listaProdutos.filter(
+    if (usuario.perfil === "SOCIO") {
+
+      clientesFiltrados = listaClientes.filter(
+        (item: any) => item.socioId === usuario.id
+      );
+
+      produtosFiltrados = listaProdutos.filter(
+        (item: any) => item.socioId === usuario.id
+      );
+
+      vendasFiltradas = listaVendas.filter(
+        (item: any) => item.socioId === usuario.id
+      );
+
+      parcelasFiltradas = listaParcelas.filter(
+        (item: any) => item.socioId === usuario.id
+      );
+
+    }
+
+    setClientes(clientesFiltrados.length);
+
+    const disponiveis = produtosFiltrados.filter(
       (produto: any) => produto.status === "DISPONIVEL"
     ).length;
 
     setEstoque(disponiveis);
 
-    setVendas(listaVendas.length);
+    setVendas(vendasFiltradas.length);
 
-    const totalReceber = (listaParcelas as any[])
-      .filter((parcela: any) => parcela.status !== "PAGA")
+    const totalReceber = parcelasFiltradas
+      .filter(
+        (parcela: any) => parcela.status !== "PAGA"
+      )
       .reduce(
         (acc: number, parcela: any) =>
-          acc + Number(parcela.valor),
+          acc + Number(parcela.valor || 0),
         0
       );
 
     setReceber(totalReceber);
 
   }
-
-  const cards = [
+    const cards = [
 
     {
       titulo: "Clientes",

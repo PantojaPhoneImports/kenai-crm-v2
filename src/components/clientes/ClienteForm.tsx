@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { criarCliente } from "@/services/clientes";
 import { buscarCEP } from "../../services/cep";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,8 @@ import { Button } from "@/components/ui/button";
 export default function ClienteForm() {
 
   const router = useRouter();
+
+  const { usuario } = useAuth();
 
   const [loading, setLoading] = useState(false);
 
@@ -71,7 +74,20 @@ export default function ClienteForm() {
 
     try {
 
-      await criarCliente(form);
+      const dadosCliente: any = {
+        ...form,
+      };
+
+      // Se for sócio, grava o vínculo automaticamente
+      if (usuario?.perfil === "SOCIO") {
+
+  dadosCliente.socioId = usuario.socioId;
+
+  dadosCliente.socioNome = usuario.nome;
+
+}
+
+      await criarCliente(dadosCliente);
 
       alert("Cliente salvo com sucesso!");
 

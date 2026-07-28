@@ -2,37 +2,49 @@
 
 import { useEffect, useState } from "react";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 import { listarVendas } from "@/services/vendas";
 
-
-import { Button } from "@/components/ui/button";
-
 export default function VendasTable() {
+  const { usuario } = useAuth();
 
   const [vendas, setVendas] = useState<any[]>([]);
 
   useEffect(() => {
-    carregarVendas();
-  }, []);
+    if (usuario) {
+      carregarVendas();
+    }
+  }, [usuario]);
 
   async function carregarVendas() {
+    let lista = await listarVendas();
 
-    const lista = await listarVendas();
+    console.log("USUARIO:", usuario);
+    console.log("SOCIO:", usuario?.socioId);
+
+    if (usuario?.perfil === "SOCIO") {
+      lista = lista.filter((venda: any) => {
+        console.log(
+          venda.produtoNome,
+          venda.socioId,
+          usuario?.socioId
+        );
+
+        return venda.socioId === usuario?.socioId;
+      });
+    }
+
+    console.log("TOTAL VENDAS:", lista.length);
 
     setVendas(lista);
-
   }
 
   return (
-
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-
       <table className="w-full">
-
         <thead className="bg-zinc-800">
-
           <tr>
-
             <th className="p-4 text-left text-zinc-300">
               Cliente
             </th>
@@ -56,22 +68,15 @@ export default function VendasTable() {
             <th className="p-4 text-center text-zinc-300">
               Status
             </th>
-
-            
-
           </tr>
-
         </thead>
 
         <tbody>
-
           {vendas.map((venda) => (
-
             <tr
               key={venda.id}
               className="border-t border-zinc-800 hover:bg-zinc-800/40 transition"
             >
-
               <td className="p-4 text-white">
                 {venda.clienteNome}
               </td>
@@ -93,25 +98,14 @@ export default function VendasTable() {
               </td>
 
               <td className="p-4 text-center">
-
                 <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
                   {venda.status}
                 </span>
-
               </td>
-
-              
-
             </tr>
-
           ))}
-
         </tbody>
-
       </table>
-
     </div>
-
   );
-
 }

@@ -60,7 +60,7 @@ export function AuthProvider({
           setUser(firebaseUser);
 
           setUsuario(dadosUsuario);
-
+console.log("USUARIO LOGADO", dadosUsuario);
         } else {
 
           setUser(null);

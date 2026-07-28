@@ -24,6 +24,8 @@ export interface Socio {
 
   percentual: number;
 
+  percentualLucro: number;
+
   pix: string;
 
   status: string;

@@ -30,6 +30,8 @@ export interface Venda {
 
   percentualEmpresa: number;
 
+  percentualLucro: number;
+
   entrada: number;
 
   entradaDestino: "SOCIO" | "EMPRESA";

@@ -10,6 +10,8 @@ import {
   User,
 } from "lucide-react";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 import {
   listarClientes,
   excluirCliente,
@@ -20,16 +22,33 @@ import { Input } from "@/components/ui/input";
 
 export default function ClienteTable() {
 
+  const { usuario } = useAuth();
+
   const [clientes, setClientes] = useState<any[]>([]);
   const [busca, setBusca] = useState("");
 
   useEffect(() => {
-    carregarClientes();
-  }, []);
+
+    if (usuario) {
+
+      carregarClientes();
+
+    }
+
+  }, [usuario]);
 
   async function carregarClientes() {
 
-    const dados = await listarClientes();
+    let dados = await listarClientes();
+
+    if (usuario?.perfil === "SOCIO") {
+
+  dados = dados.filter(
+    (cliente: any) =>
+      cliente.socioId === usuario.socioId
+  );
+
+}
 
     setClientes(dados);
 
@@ -113,25 +132,15 @@ export default function ClienteTable() {
 
             <tr>
 
-              <th className="p-4 text-left">
-                Nome
-              </th>
+              <th className="p-4 text-left">Nome</th>
 
-              <th className="p-4 text-left">
-                CPF
-              </th>
+              <th className="p-4 text-left">CPF</th>
 
-              <th className="p-4 text-left">
-                Telefone
-              </th>
+              <th className="p-4 text-left">Telefone</th>
 
-              <th className="p-4 text-left">
-                Profissão
-              </th>
+              <th className="p-4 text-left">Profissão</th>
 
-              <th className="p-4 text-center">
-                Ações
-              </th>
+              <th className="p-4 text-center">Ações</th>
 
             </tr>
 
@@ -162,7 +171,8 @@ export default function ClienteTable() {
                   key={cliente.id}
                   className="border-t border-zinc-800 hover:bg-zinc-800/40 transition-colors"
                 >
-                                    <td className="p-4 text-white">
+
+                  <td className="p-4 text-white">
 
                     <Link
                       href={`/clientes/ficha/${cliente.id}`}
@@ -175,31 +185,17 @@ export default function ClienteTable() {
 
                   </td>
 
-                  <td className="p-4">
+                  <td className="p-4">{cliente.cpf}</td>
 
-                    {cliente.cpf}
+                  <td className="p-4">{cliente.telefone}</td>
 
-                  </td>
-
-                  <td className="p-4">
-
-                    {cliente.telefone}
-
-                  </td>
-
-                  <td className="p-4">
-
-                    {cliente.profissao}
-
-                  </td>
+                  <td className="p-4">{cliente.profissao}</td>
 
                   <td className="p-4">
 
                     <div className="flex justify-center gap-2">
 
-                      <Link
-                        href={`/clientes/ficha/${cliente.id}`}
-                      >
+                      <Link href={`/clientes/ficha/${cliente.id}`}>
 
                         <Button
                           size="icon"
@@ -212,9 +208,7 @@ export default function ClienteTable() {
 
                       </Link>
 
-                      <Link
-                        href={`/clientes/${cliente.id}`}
-                      >
+                      <Link href={`/clientes/${cliente.id}`}>
 
                         <Button
                           size="icon"
@@ -246,7 +240,8 @@ export default function ClienteTable() {
               ))
 
             )}
-                      </tbody>
+
+          </tbody>
 
         </table>
 
@@ -257,4 +252,3 @@ export default function ClienteTable() {
   );
 
 }
-                

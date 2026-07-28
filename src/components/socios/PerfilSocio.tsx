@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import { calcularResumoSocio } from "@/services/resumoFinanceiro";
 import {
   Users,
   Smartphone,
@@ -12,10 +12,7 @@ import {
 } from "lucide-react";
 
 import { buscarSocio } from "@/services/socios";
-import { listarProdutos } from "@/services/estoque";
-import { listarVendas } from "@/services/vendas";
-import { listarParcelas } from "@/services/parcelas";
-import { listarClientes } from "@/services/clientes";
+
 
 interface Props {
   id: string;
@@ -32,94 +29,58 @@ export default function PerfilSocio({ id }: Props) {
   const [recebido, setRecebido] = useState(0);
   const [lucro, setLucro] = useState(0);
   const [vendas, setVendas] = useState(0);
+const [capitalRecuperado, setCapitalRecuperado] = useState(0);
 
+const [capitalRestante, setCapitalRestante] = useState(0);
+
+const [lucroRecebido, setLucroRecebido] = useState(0);
+
+const [lucroReceber, setLucroReceber] = useState(0);
   useEffect(() => {
     carregar();
   }, []);
 
   async function carregar() {
 
-    const dados = await buscarSocio(id);
+  const dados = await buscarSocio(id);
 
-    if (!dados) return;
+  if (!dados) return;
 
-    setSocio(dados);
+  setSocio(dados);
 
-    const produtos = await listarProdutos();
-    const vendasLista = await listarVendas();
-    const parcelas = await listarParcelas();
-    await listarClientes();
+  const resumo = await calcularResumoSocio(id);
 
-    const produtosSocio = produtos.filter(
-      (produto: any) => produto.socioId === id
-    );
+  setCapital(resumo.capitalInvestido);
 
-    setEstoque(produtosSocio.length);
+  setEstoque(resumo.estoque);
 
-    const capitalInvestido = produtosSocio.reduce(
-      (total: number, produto: any) =>
-        total + Number(produto.custo || 0),
-      0
-    );
+  setClientes(resumo.clientes);
 
-    setCapital(capitalInvestido);
+  setReceber(resumo.receber);
 
-    const vendasSocio = vendasLista.filter((venda: any) =>
-      produtosSocio.some(
-        (produto: any) => produto.id === venda.produtoId
-      )
-    );
+  setRecebido(resumo.recebido);
 
-    setVendas(vendasSocio.length);
+  setLucro(resumo.lucroRecebido);
 
-    const clientesUnicos = new Set(
-      vendasSocio.map(
-        (venda: any) => venda.clienteId
-      )
-    );
+  setVendas(resumo.vendas);
 
-    setClientes(clientesUnicos.size);
+  setCapitalRecuperado(
+    resumo.capitalRecuperado
+  );
 
-    let totalRecebido = 0;
-    let totalReceber = 0;
+  setCapitalRestante(
+    resumo.capitalRestante
+  );
 
-    parcelas.forEach((parcela: any) => {
+  setLucroRecebido(
+    resumo.lucroRecebido
+  );
 
-      const pertenceAoSocio = vendasSocio.some(
-        (venda: any) =>
-          venda.clienteNome === parcela.clienteNome
-      );
+  setLucroReceber(
+    resumo.lucroReceber
+  );
 
-      if (!pertenceAoSocio) return;
-
-      if (parcela.status === "PAGA") {
-
-        totalRecebido += Number(parcela.valor);
-
-      } else {
-
-        totalReceber += Number(parcela.valor);
-
-      }
-
-    });
-
-    setRecebido(totalRecebido);
-    setReceber(totalReceber);
-
-    setLucro(totalRecebido - capitalInvestido);
-
-  }
-
-  if (!socio) {
-
-    return (
-      <div className="text-white text-xl">
-        Carregando...
-      </div>
-    );
-
-  }
+}
 
   return (
 
@@ -147,7 +108,41 @@ export default function PerfilSocio({ id }: Props) {
           })}
           icone={<DollarSign className="text-green-400" size={30} />}
         />
+<Card
+  titulo="Capital Recuperado"
+  valor={capitalRecuperado.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  })}
+  icone={<TrendingUp className="text-green-400" size={30} />}
+/>
 
+<Card
+  titulo="Capital Restante"
+  valor={capitalRestante.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  })}
+  icone={<Wallet className="text-yellow-400" size={30} />}
+/>
+
+<Card
+  titulo="Lucro Recebido"
+  valor={lucroRecebido.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  })}
+  icone={<DollarSign className="text-cyan-400" size={30} />}
+/>
+
+<Card
+  titulo="Lucro a Receber"
+  valor={lucroReceber.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  })}
+  icone={<DollarSign className="text-blue-400" size={30} />}
+/>
         <Card
           titulo="Celulares"
           valor={estoque}

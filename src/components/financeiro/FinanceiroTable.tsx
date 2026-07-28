@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 import {
   Search,
@@ -19,7 +20,10 @@ import ReceberModal from "./ReceberModal";
 
 export default function FinanceiroTable() {
 
+  const { usuario } = useAuth();
+
   const [parcelas, setParcelas] = useState<any[]>([]);
+
   const [busca, setBusca] = useState("");
 
   const [modalAberto, setModalAberto] =
@@ -29,13 +33,31 @@ export default function FinanceiroTable() {
     useState<any>(null);
 
   useEffect(() => {
-    carregarParcelas();
-  }, []);
+
+    if (usuario) {
+
+      carregarParcelas();
+
+    }
+
+  }, [usuario]);
 
   async function carregarParcelas() {
 
-    const dados = await listarParcelas();
+    let dados = await listarParcelas();
 
+    if (usuario?.perfil === "SOCIO") {
+
+  dados = dados.filter(
+
+    (parcela: any) =>
+
+      parcela.socioId === usuario.socioId
+
+  );
+
+}
+console.log("TOTAL PARCELAS:", dados.length);
     dados.sort((a: any, b: any) => {
 
       const dataA = a.vencimento?.seconds
@@ -89,8 +111,7 @@ export default function FinanceiroTable() {
     carregarParcelas();
 
   }
-
-  const parcelasFiltradas = useMemo(() => {
+    const parcelasFiltradas = useMemo(() => {
 
     const texto = busca.toLowerCase();
 
@@ -114,7 +135,9 @@ export default function FinanceiroTable() {
 
   }, [parcelas, busca]);
 
-  return (    <div className="space-y-6">
+  return (
+
+    <div className="space-y-6">
 
       <div className="flex items-center justify-between">
 
@@ -224,7 +247,8 @@ export default function FinanceiroTable() {
 
           </thead>
 
-          <tbody>          {parcelasFiltradas.length === 0 ? (
+          <tbody>
+                      {parcelasFiltradas.length === 0 ? (
 
             <tr>
 
@@ -359,9 +383,9 @@ export default function FinanceiroTable() {
 
           )}
 
-        </tbody>
+          </tbody>
 
-      </table>
+        </table>
 
       </div>
 
@@ -376,3 +400,4 @@ export default function FinanceiroTable() {
   );
 
 }
+          
