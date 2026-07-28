@@ -1,20 +1,5 @@
-import Layout from "@/components/layout/Layout";
-import PerfilSocio from "@/components/socios/PerfilSocio";
+import { redirect } from "next/navigation";
 
-type Props = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
-export default async function PerfilSocioPage({
-  params,
-}: Props) {
-  const { id } = await params;
-
-  return (
-    <Layout>
-      <PerfilSocio id={id} />
-    </Layout>
-  );
+export default function Home() {
+  redirect("/login");
 }
