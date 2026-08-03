@@ -6,6 +6,7 @@ import { listarClientes } from "@/services/clientes";
 import {
   listarProdutos,
   venderProduto,
+  buscarProdutoPorId,
 } from "@/services/estoque";
 import { criarVenda } from "@/services/vendas";
 import { criarParcela } from "@/services/parcelas";
@@ -17,8 +18,24 @@ import { Input } from "@/components/ui/input";
 
 import { Cliente } from "@/types/cliente";
 import { Produto } from "@/types/produto";
+import { filtrarPorSocio, pertenceAoSocio, usuarioEhSocio } from "@/lib/socio";
+import { useAuth } from "@/contexts/AuthContext";
+
+function descricaoProduto(produto: Produto) {
+  const cor = produto.cor?.trim();
+  const imei = produto.imei?.trim();
+
+  return [
+    produto.nome,
+    cor,
+    imei ? `IMEI: ${imei}` : "",
+  ]
+    .filter(Boolean)
+    .join(" • ");
+}
 
 export default function VendaForm() {
+  const { usuario } = useAuth();
 
   const [clientes, setClientes] =
     useState<Cliente[]>([]);
@@ -38,6 +55,7 @@ export default function VendaForm() {
 
     socioId: "",
     socioNome: "",
+    tipoSocio: "PARCEIRO" as "PARCEIRO" | "INVESTIDOR",
 entradaPara: "SOCIO",
     custoProduto: 0,
 
@@ -70,9 +88,11 @@ parcelas: 12,
 
     carregarDados();
 
-  }, []);
+  }, [usuario]);
 
   async function carregarDados() {
+
+    if (!usuario) return;
 
     const listaClientes =
       await listarClientes();
@@ -80,18 +100,10 @@ parcelas: 12,
     const listaProdutos =
       await listarProdutos();
 
-    setClientes(listaClientes);
+    setClientes(filtrarPorSocio(listaClientes, usuario));
 
     setProdutos(
-
-      listaProdutos.filter(
-
-        (p: Produto) =>
-
-          p.status === "DISPONIVEL"
-
-      )
-
+      filtrarPorSocio(listaProdutos, usuario).filter((p: Produto) => p.status === "DISPONIVEL")
     );
 
   }
@@ -125,36 +137,38 @@ parcelas: 12,
     id: string
   ) {
 
-    const produto =
-      produtos.find(
-        (p) => p.id === id
-      );
-const socio = produto?.socioId
+    if (!id) {
+      setVenda((old) => ({
+        ...old,
+        produtoId: "",
+        produtoNome: "",
+        imei: "",
+        socioId: "",
+        socioNome: "",
+        valorProduto: 0,
+      }));
+      return;
+    }
+
+    const produto = await buscarProdutoPorId(id);
+
+if (!produto) return;
+
+const socio = produto.socioId
   ? await buscarSocio(produto.socioId)
   : null;
-    if (!produto) return;
 
-    const saldo =
-      Number(produto.venda);
+    const valorProduto = Number(produto.venda);
 
     setVenda((old) => ({
 
       ...old,
 
-      produtoId:
-        produto.id || "",
-
-      produtoNome:
-        produto.nome,
-
-      imei:
-        produto.imei,
-
-      socioId:
-        produto.socioId,
-
-      socioNome:
-        produto.socioNome,
+      produtoId: produto.id || "",
+      produtoNome: produto.nome,
+      imei: produto.imei,
+      socioId: produto.socioId,
+      socioNome: produto.socioNome,
         tipoSocio:
 
   produto.tipoSocio,
@@ -162,11 +176,10 @@ const socio = produto?.socioId
       custoProduto:
         Number(produto.custo),
 
-      valorProduto:
-        Number(produto.venda),
+      valorProduto,
 
       capitalSocio:
-        Number(produto.capitalSocio || 0),
+        Number(produto.capitalSocio || produto.custo || 0),
 
       capitalEmpresa:
         Number(produto.capitalEmpresa || 0),
@@ -181,7 +194,7 @@ percentualLucro:
       entrada: 0,
 
       valorParcela:
-        saldo /
+        valorProduto /
         old.parcelas,
 
     }));
@@ -244,11 +257,19 @@ percentualLucro:
 
   try {
 
+    if (!venda.clienteId || !venda.produtoId) {
+      throw new Error("Selecione um cliente e um produto.");
+    }
+
+    if (usuarioEhSocio(usuario) && !pertenceAoSocio(venda, usuario?.socioId)) {
+      throw new Error("O produto selecionado não pertence ao sócio autenticado.");
+    }
+
     const idVenda = await criarVenda({
 
       ...venda,
 entradaDestino:
-  venda.entradaDestino,
+  venda.entradaDestino as "SOCIO" | "EMPRESA",
       data: new Date(),
 
       status: "ATIVA",
@@ -293,40 +314,45 @@ await criarRepasse({
   socioNome: venda.socioNome,
 
   
-tipoSocio: "PARCEIRO",
-  percentualSocio: venda.percentualSocio,
+tipoSocio: venda.tipoSocio,
 
-  percentualLucro: venda.percentualLucro,
+entrada: venda.entrada,
 
+parcelas: venda.parcelas,
 
-  valorTotalVenda:
-    venda.valorProduto,
+percentualSocio:
+  venda.percentualSocio,
 
-  valorReceber:
-    venda.valorProduto -
-    venda.entrada,
+percentualLucro:
+  venda.percentualLucro,
 
-  capitalInvestido:
-    venda.capitalSocio,
+valorTotalVenda:
+  venda.valorProduto,
 
-  capitalRecuperado:
-    entradaSocio,
+custoProduto:
+  venda.custoProduto,
 
-  capitalRestante:
-    capitalRestante,
+valorReceber:
+  venda.valorProduto -
+  venda.entrada,
 
-  capitalPorParcela:
+capitalInvestido:
+  venda.capitalSocio,
 
-    capitalRestante /
+capitalRecuperado:
+  entradaSocio,
 
-    venda.parcelas,
+capitalRestante:
+  capitalRestante,
 
-      lucroTotal:
-        lucro,
+capitalPorParcela:
+  capitalRestante /
+  venda.parcelas,
 
-      
+lucroTotal:
+  lucro,
+
 lucroSocioPorParcela:
-
 (
   lucro *
   venda.percentualLucro /
@@ -334,52 +360,44 @@ lucroSocioPorParcela:
 ) /
 venda.parcelas,
 
-      lucroEmpresaPorParcela:
-
+lucroEmpresaPorParcela:
 (
   lucro -
-
   (
     lucro *
     venda.percentualLucro /
     100
   )
-
 ) /
 venda.parcelas,
 
-      socioRecebido: 0,
+socioRecebido:
+  entradaSocio,
 
-      empresaRecebido: 0,
+empresaRecebido:
+  0,
 
-      totalSocioReceber:
-
-venda.capitalSocio +
-
-(
-  lucro *
-  venda.percentualLucro /
-  100
-),
-
-      totalEmpresaReceber:
-
-venda.capitalEmpresa +
-
-(
-  lucro -
-
+totalSocioReceber:
+  venda.capitalSocio +
   (
     lucro *
     venda.percentualLucro /
     100
-  )
+  ) -
+  entradaSocio,
 
-),
+totalEmpresaReceber:
+  venda.capitalEmpresa +
+  (
+    lucro -
+    (
+      lucro *
+      venda.percentualLucro /
+      100
+    )
+  ),
 
-      status: "ATIVO",
 
-      data: new Date(),
 
     });
 
@@ -551,7 +569,7 @@ return (
             key={produto.id}
             value={produto.id}
           >
-            {produto.nome}
+            {descricaoProduto(produto)}
           </option>
 
         ))}

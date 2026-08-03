@@ -21,7 +21,11 @@ export default function LoginForm() {
 
   const [loading, setLoading] = useState(false);
 
-  async function entrar() {
+  async function entrar(event?: React.FormEvent<HTMLFormElement>) {
+
+    event?.preventDefault();
+
+    console.info("[login:form] submit recebido", { email });
 
     if (!email || !senha) {
 
@@ -35,13 +39,24 @@ export default function LoginForm() {
 
       setLoading(true);
 
-      await login(email, senha);
+      const usuarioFirebase = await login(email, senha);
+
+      console.info("[login:form] login retornou usuário Firebase; navegando para dashboard", {
+        email,
+        uid: usuarioFirebase.uid,
+      });
 
       router.push("/dashboard");
 
     } catch (error) {
 
-      console.error(error);
+      const firebaseError = error as { code?: string; message?: string };
+      console.error("[login:form] falha no submit", {
+        email,
+        code: firebaseError.code,
+        message: firebaseError.message,
+        error,
+      });
 
       alert("E-mail ou senha inválidos.");
 
@@ -55,7 +70,7 @@ export default function LoginForm() {
 
   return (
 
-    <div className="w-full rounded-3xl border border-zinc-800 bg-zinc-900/90 backdrop-blur-xl shadow-2xl p-8">
+    <form onSubmit={entrar} className="w-full rounded-3xl border border-zinc-800 bg-zinc-900/90 p-5 shadow-2xl backdrop-blur-xl sm:p-8">
 
       <div className="text-center mb-8">
 
@@ -142,8 +157,7 @@ export default function LoginForm() {
         </div>
 
         <Button
-
-          onClick={entrar}
+          type="submit"
 
           disabled={loading}
 
@@ -167,7 +181,7 @@ export default function LoginForm() {
 
       </div>
 
-    </div>
+    </form>
 
   );
 

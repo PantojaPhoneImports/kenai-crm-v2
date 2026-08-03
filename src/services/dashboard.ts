@@ -4,8 +4,9 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { filtrarPorSocio, type UsuarioAutenticado } from "@/lib/socio";
 
-export async function carregarDashboard(usuario?: any) {
+export async function carregarDashboard(usuario?: UsuarioAutenticado | null) {
 
   try {
 
@@ -29,50 +30,32 @@ export async function carregarDashboard(usuario?: any) {
       collection(db, "socios")
     );
 
-    let listaClientes = clientes.docs.map((d) => d.data());
+    let listaClientes = clientes.docs.map((d) => ({
+  id: d.id,
+  ...d.data(),
+}));
 
-    let listaEstoque = estoque.docs.map((d) => d.data());
+console.table(listaClientes);
 
-    let listaVendas = vendas.docs.map((d) => d.data());
+let listaEstoque = estoque.docs.map((d) => ({
+  id: d.id,
+  ...d.data(),
+}));
 
-    let listaParcelas = parcelas.docs.map((d) => d.data());
+let listaVendas = vendas.docs.map((d) => ({
+  id: d.id,
+  ...d.data(),
+}));
 
-    console.log("==================================");
-    console.log("USUARIO:", usuario);
-    console.log("SOCIO ID:", usuario?.socioId);
+let listaParcelas = parcelas.docs.map((d) => ({
+  id: d.id,
+  ...d.data(),
+}));
 
-    console.log("ANTES DO FILTRO");
-    console.log("Clientes:", listaClientes.length);
-    console.log("Estoque:", listaEstoque.length);
-    console.log("Vendas:", listaVendas.length);
-    console.log("Parcelas:", listaParcelas.length);
-
-    if (usuario?.perfil === "SOCIO") {
-
-      listaClientes = listaClientes.filter(
-        (item: any) => item.socioId === usuario.socioId
-      );
-
-      listaEstoque = listaEstoque.filter(
-        (item: any) => item.socioId === usuario.socioId
-      );
-
-      listaVendas = listaVendas.filter(
-        (item: any) => item.socioId === usuario.socioId
-      );
-
-      listaParcelas = listaParcelas.filter(
-        (item: any) => item.socioId === usuario.socioId
-      );
-
-    }
-
-    console.log("DEPOIS DO FILTRO");
-    console.log("Clientes:", listaClientes.length);
-    console.log("Estoque:", listaEstoque.length);
-    console.log("Vendas:", listaVendas.length);
-    console.log("Parcelas:", listaParcelas.length);
-    console.log("==================================");
+    listaClientes = filtrarPorSocio(listaClientes, usuario);
+    listaEstoque = filtrarPorSocio(listaEstoque, usuario);
+    listaVendas = filtrarPorSocio(listaVendas, usuario);
+    listaParcelas = filtrarPorSocio(listaParcelas, usuario);
 
     const valorInvestido = listaEstoque.reduce(
       (total: number, produto: any) =>

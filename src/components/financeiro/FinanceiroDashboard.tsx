@@ -16,7 +16,7 @@ import { listarParcelas } from "@/services/parcelas";
 import { listarProdutos } from "@/services/estoque";
 import { listarVendas } from "@/services/vendas";
 import { calcularResumoSocio } from "@/services/resumoFinanceiro";
-
+import { pertenceAoSocio, possuiSocioId, usuarioEhSocio } from "@/lib/socio";
 export default function FinanceiroDashboard() {
 
   const { usuario } = useAuth();
@@ -35,6 +35,7 @@ const [capitalRestante, setCapitalRestante] = useState(0);
 const [lucroReceber, setLucroReceber] = useState(0);
 
 const [lucroEmpresa, setLucroEmpresa] = useState(0);
+const [tipoSocioFinanceiro, setTipoSocioFinanceiro] = useState<string | undefined>();
   useEffect(() => {
 
     if (usuario) {
@@ -51,14 +52,13 @@ const [lucroEmpresa, setLucroEmpresa] = useState(0);
     // DASHBOARD DO SÓCIO
     // ==========================
 
-    if (usuario?.perfil === "SOCIO") {
+    if (usuarioEhSocio(usuario)) {
+      const socioIdUsuario = usuario?.socioId;
+      if (!possuiSocioId(socioIdUsuario)) return;
 
       const parcelas = await listarParcelas();
 
-      const resumo = await calcularResumoSocio(
-        usuario.socioId
-      );
-
+      const resumo = await calcularResumoSocio(socioIdUsuario);
       setRecebido(resumo.recebido);
       setReceber(resumo.receber);
       setInvestido(resumo.capitalInvestido);
@@ -76,11 +76,13 @@ setCapitalRestante(
 setLucroReceber(
   resumo.lucroReceber
 );
+      setLucroEmpresa(resumo.lucroEmpresaRecebido);
+      setTipoSocioFinanceiro(resumo.tipoSocio);
       const hoje = new Date();
 
       const atrasadas = parcelas.filter((p: any) => {
 
-        if (p.socioId !== usuario.socioId)
+        if (!pertenceAoSocio(p, socioIdUsuario))
           return false;
 
         if (p.status === "PAGA")
@@ -200,19 +202,21 @@ setCapitalRestante(0);
 setLucroReceber(0);
 
 setLucroEmpresa(0);
+setTipoSocioFinanceiro(undefined);
   }
 
+  const resumoEhParceiro = tipoSocioFinanceiro === "PARCEIRO";
   const cards = [
 
   {
-    titulo: "Recebido",
+    titulo: "Total Recebido",
     valor: recebido,
     icone: DollarSign,
     cor: "text-green-400",
   },
 
   {
-    titulo: "A Receber",
+    titulo: "Total a Receber",
     valor: receber,
     icone: Wallet,
     cor: "text-blue-400",
@@ -241,19 +245,39 @@ setLucroEmpresa(0);
           cor: "text-orange-400",
         },
 
-        {
-          titulo: "Lucro Recebido",
-          valor: meuLucro,
-          icone: DollarSign,
-          cor: "text-green-500",
-        },
-
-        {
-          titulo: "Lucro a Receber",
-          valor: lucroReceber,
-          icone: Wallet,
-          cor: "text-cyan-400",
-        },
+        ...(resumoEhParceiro ? [
+          {
+            titulo: "Seu Lucro Recebido",
+            valor: meuLucro,
+            icone: DollarSign,
+            cor: "text-green-500",
+          },
+          {
+            titulo: "Seu Lucro a Receber",
+            valor: lucroReceber,
+            icone: Wallet,
+            cor: "text-cyan-400",
+          },
+          {
+            titulo: "Lucro Pantoja",
+            valor: lucroEmpresa,
+            icone: TrendingUp,
+            cor: "text-violet-400",
+          },
+        ] : [
+          {
+            titulo: "Lucro Recebido",
+            valor: meuLucro,
+            icone: DollarSign,
+            cor: "text-green-500",
+          },
+          {
+            titulo: "Lucro a Receber",
+            valor: lucroReceber,
+            icone: Wallet,
+            cor: "text-cyan-400",
+          },
+        ]),
       ]
     : [
         {
@@ -284,7 +308,7 @@ setLucroEmpresa(0);
 
   return (
 
-    <div className="grid grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
 
       {cards.map((card: any) => {
 

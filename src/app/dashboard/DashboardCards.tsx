@@ -17,6 +17,7 @@ import { listarClientes } from "@/services/clientes";
 import { listarProdutos } from "@/services/estoque";
 import { listarVendas } from "@/services/vendas";
 import { listarParcelas } from "@/services/parcelas";
+import { filtrarPorSocio } from "@/lib/socio";
 
 export default function DashboardCards() {
 
@@ -40,31 +41,10 @@ export default function DashboardCards() {
     const listaProdutos = await listarProdutos();
     const listaVendas = await listarVendas();
     const listaParcelas = await listarParcelas();
-
-    let clientesFiltrados: any[] = listaClientes;
-    let produtosFiltrados: any[] = listaProdutos;
-    let vendasFiltradas: any[] = listaVendas;
-    let parcelasFiltradas: any[] = listaParcelas;
-
-    if (usuario.perfil === "SOCIO") {
-
-      clientesFiltrados = listaClientes.filter(
-        (item: any) => item.socioId === usuario.id
-      );
-
-      produtosFiltrados = listaProdutos.filter(
-        (item: any) => item.socioId === usuario.id
-      );
-
-      vendasFiltradas = listaVendas.filter(
-        (item: any) => item.socioId === usuario.id
-      );
-
-      parcelasFiltradas = listaParcelas.filter(
-        (item: any) => item.socioId === usuario.id
-      );
-
-    }
+    const clientesFiltrados = filtrarPorSocio(listaClientes, usuario);
+    const produtosFiltrados = filtrarPorSocio(listaProdutos, usuario);
+    const vendasFiltradas = filtrarPorSocio(listaVendas, usuario);
+    const parcelasFiltradas = filtrarPorSocio(listaParcelas, usuario);
 
     setClientes(clientesFiltrados.length);
 

@@ -19,6 +19,12 @@ export default function ProtectedRoute({
 
     if (!loading && !user) {
 
+      console.warn("[auth:protected-route] redirect para /login", {
+        motivo: "contexto finalizou sem usuário Firebase",
+        loading,
+        uid: null,
+      });
+
       router.replace("/login");
 
     }
@@ -26,6 +32,8 @@ export default function ProtectedRoute({
   }, [loading, user, router]);
 
   if (loading) {
+
+    console.info("[auth:protected-route] aguardando AuthContext", { loading, possuiUsuario: Boolean(user) });
 
     return (
 

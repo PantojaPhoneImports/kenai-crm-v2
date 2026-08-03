@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { filtrarPorSocio } from "@/lib/socio";
 
 export default function LucroPorProduto() {
 const { usuario } = useAuth();
@@ -18,7 +19,7 @@ const { usuario } = useAuth();
 
     carregar();
 
-  }, []);
+  }, [usuario]);
 
   async function carregar() {
 
@@ -35,17 +36,7 @@ const { usuario } = useAuth();
 
 }));
 
-if (usuario?.perfil === "SOCIO") {
-
-  dados = dados.filter(
-
-    (item: any) =>
-
-      item.socioId === usuario.socioId
-
-  );
-
-}
+    dados = filtrarPorSocio(dados, usuario);
 
     dados.sort(
 

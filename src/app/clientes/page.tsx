@@ -9,10 +9,10 @@ export default function ClientesPage() {
     <Layout>
       <div className="space-y-8">
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
           <div>
-            <h1 className="text-4xl font-bold text-white">
+            <h1 className="text-3xl font-bold text-white sm:text-4xl">
               Clientes
             </h1>
 
@@ -22,7 +22,7 @@ export default function ClientesPage() {
           </div>
 
           <Link href="/clientes/novo">
-            <Button>
+            <Button className="w-full sm:w-auto">
               Novo Cliente
             </Button>
           </Link>

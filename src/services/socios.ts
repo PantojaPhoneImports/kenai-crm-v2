@@ -60,10 +60,12 @@ export async function criarSocio(
   socio: Socio
 ) {
 
-  await addDoc(
+  const docRef = await addDoc(
     sociosRef,
     socio
   );
+
+  return docRef.id;
 
 }
 

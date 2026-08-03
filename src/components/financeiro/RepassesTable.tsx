@@ -42,7 +42,7 @@ lista.sort(
 
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
 
-      <table className="w-full">
+      <table className="mobile-card-table w-full">
 
         <thead className="bg-zinc-800">
 
@@ -99,19 +99,19 @@ lista.sort(
               className="border-t border-zinc-800 hover:bg-zinc-800/40"
             >
 
-              <td className="p-4">
+              <td data-label="Cliente" className="p-4">
                 {repasse.clienteNome}
               </td>
 
-              <td className="p-4">
+              <td data-label="Produto" className="p-4">
                 {repasse.produto}
               </td>
 
-              <td className="p-4 text-center">
+              <td data-label="Sócio" className="p-4 text-center">
                 {repasse.socioNome}
               </td>
 
-              <td className="p-4 text-center text-cyan-400">
+              <td data-label="Capital Investido" className="p-4 text-center text-cyan-400">
 
                 {Number(
                   repasse.capitalInvestido || 0
@@ -125,7 +125,7 @@ lista.sort(
 
               </td>
 
-              <td className="p-4 text-center text-green-400">
+              <td data-label="Capital Recuperado" className="p-4 text-center text-green-400">
 
                 {Number(
                   repasse.capitalRecuperado || 0
@@ -139,7 +139,7 @@ lista.sort(
 
               </td>
 
-              <td className="p-4 text-center text-yellow-400">
+              <td data-label="Capital Restante" className="p-4 text-center text-yellow-400">
 
                 {Number(
                   repasse.capitalRestante || 0
@@ -153,7 +153,7 @@ lista.sort(
 
               </td>
 
-              <td className="p-4 text-center text-green-400">
+              <td data-label="Lucro Recebido" className="p-4 text-center text-green-400">
 
                 {(
                   Number(repasse.socioRecebido || 0)
@@ -169,7 +169,7 @@ lista.sort(
 
               </td>
 
-              <td className="p-4 text-center text-orange-400">
+              <td data-label="Lucro a Receber" className="p-4 text-center text-orange-400">
 
                 {(
                   Number(repasse.totalSocioReceber || 0)
@@ -185,7 +185,7 @@ lista.sort(
 
               </td>
 
-              <td className="p-4 text-center font-bold text-white">
+              <td data-label="Total Recebido" className="p-4 text-center font-bold text-white">
 
                 {Number(
                   repasse.socioRecebido || 0

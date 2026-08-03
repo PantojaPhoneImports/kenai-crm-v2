@@ -45,8 +45,11 @@ export interface Venda {
   formaPagamento: string;
 
   status:
+    | "ATIVA"
     | "ABERTA"
     | "FINALIZADA"
     | "CANCELADA";
+
+  data?: Date;
 
 }

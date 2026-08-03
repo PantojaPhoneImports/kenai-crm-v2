@@ -29,9 +29,9 @@ export default function ReceberModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center sm:p-6">
 
-      <div className="bg-zinc-900 rounded-xl p-8 w-[450px] border border-zinc-700 space-y-5">
+      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-900 p-5 space-y-5 sm:p-8">
 
         <h2 className="text-2xl font-bold text-white">
           Receber Parcela
@@ -71,17 +71,17 @@ export default function ReceberModal({
           />
         </div>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
 
           <Button
-            variant="outline"
+            className="w-full sm:w-auto" variant="outline"
             onClick={onClose}
           >
             Cancelar
           </Button>
 
           <Button
-            onClick={() =>
+            className="w-full sm:w-auto" onClick={() =>
               onConfirm(
                 formaPagamento,
                 dataPagamento,

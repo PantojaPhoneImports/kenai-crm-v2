@@ -11,6 +11,7 @@ import {
 } from "@/services/estoque";
 
 import { Produto } from "@/types/produto";
+import { filtrarPorSocio } from "@/lib/socio";
 
 export default function EstoqueTable() {
   const { usuario } = useAuth();
@@ -24,27 +25,11 @@ export default function EstoqueTable() {
   }, [usuario]);
 
   async function carregarProdutos() {
-    let dados = await listarProdutos();
 
-    console.log("USUARIO:", usuario);
-    console.log("SOCIO:", usuario?.socioId);
+    const dados = await listarProdutos();
+    setProdutos(filtrarPorSocio(dados, usuario));
 
-    if (usuario?.perfil === "SOCIO") {
-      dados = dados.filter((produto: any) => {
-        console.log(
-          produto.nome,
-          produto.socioId,
-          usuario?.socioId
-        );
-
-        return produto.socioId === usuario?.socioId;
-      });
-    }
-
-    console.log("TOTAL:", dados.length);
-
-    setProdutos(dados);
-  }
+}
 
   async function apagar(id: string) {
     const confirmar = confirm(
@@ -60,7 +45,7 @@ export default function EstoqueTable() {
 
   return (
     <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
-      <table className="w-full">
+      <table className="mobile-card-table w-full">
         <thead className="bg-zinc-800">
           <tr>
             <th className="p-4 text-left text-zinc-300">Produto</th>
@@ -80,27 +65,27 @@ export default function EstoqueTable() {
               key={produto.id}
               className="border-t border-zinc-800 hover:bg-zinc-800/40 transition"
             >
-              <td className="p-4 text-white font-medium">
+              <td data-label="Produto" className="p-4 text-white font-medium">
                 {produto.nome}
               </td>
 
-              <td className="p-4 text-zinc-400">
+              <td data-label="Marca" className="p-4 text-zinc-400">
                 {produto.marca}
               </td>
 
-              <td className="p-4 text-zinc-400">
+              <td data-label="Modelo" className="p-4 text-zinc-400">
                 {produto.modelo}
               </td>
 
-              <td className="p-4 text-zinc-400">
+              <td data-label="IMEI" className="p-4 text-zinc-400">
                 {produto.imei}
               </td>
 
-              <td className="p-4 text-green-400 font-semibold">
+              <td data-label="Venda" className="p-4 text-green-400 font-semibold">
                 R$ {Number(produto.venda).toFixed(2)}
               </td>
 
-              <td className="p-4">
+              <td data-label="Investidor" className="p-4">
                 {produto.socioNome ? (
                   <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-semibold">
                     👤 {produto.socioNome}
@@ -112,7 +97,7 @@ export default function EstoqueTable() {
                 )}
               </td>
 
-              <td className="p-4 text-center">
+              <td data-label="Status" className="p-4 text-center">
                 {produto.status === "DISPONIVEL" && (
                   <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm font-semibold">
                     Disponível
@@ -138,17 +123,17 @@ export default function EstoqueTable() {
                 )}
               </td>
 
-              <td className="p-4">
-                <div className="flex justify-center gap-2">
+              <td data-label="Ações" className="p-4">
+                <div className="mobile-actions flex w-full flex-wrap justify-end gap-2">
                   <Link href={`/estoque/${produto.id}`}>
-                    <button className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm transition">
+                    <button className="min-h-11 px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm transition">
                       Editar
                     </button>
                   </Link>
 
                   {produto.status === "DISPONIVEL" && (
                     <Link href="/vendas/nova">
-                      <button className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm">
+                      <button className="min-h-11 px-3 py-1 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm">
                         Vender
                       </button>
                     </Link>
@@ -156,7 +141,7 @@ export default function EstoqueTable() {
 
                   <button
                     onClick={() => apagar(produto.id!)}
-                    className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm transition"
+                    className="min-h-11 px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm transition"
                   >
                     Excluir
                   </button>

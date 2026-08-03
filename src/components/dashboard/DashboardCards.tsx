@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { collection, onSnapshot } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
+import { db } from "@/lib/firebase";
+import { filtrarPorSocio } from "@/lib/socio";
 
 import {
   DollarSign,
@@ -31,12 +34,38 @@ export default function DashboardCards() {
     faturamento: 0,
   });
 
+  const [quantidadeClientes, setQuantidadeClientes] = useState(0);
+
   useEffect(() => {
 
     if (usuario) {
       carregar();
     }
 
+  }, [usuario]);
+
+  useEffect(() => {
+    if (!usuario) {
+      setQuantidadeClientes(0);
+      return;
+    }
+
+    const cancelarAssinatura = onSnapshot(
+      collection(db, "clientes"),
+      (snapshot) => {
+        const clientes = snapshot.docs.map((documento) => ({
+          id: documento.id,
+          ...documento.data(),
+        }));
+
+        setQuantidadeClientes(filtrarPorSocio(clientes, usuario).length);
+      },
+      (error) => {
+        console.error("Erro ao atualizar a quantidade de clientes no Dashboard:", error);
+      }
+    );
+
+    return cancelarAssinatura;
   }, [usuario]);
 
   async function carregar() {
@@ -83,7 +112,7 @@ export default function DashboardCards() {
 
     {
       titulo: "Clientes",
-      valor: dados.clientes.toString(),
+      valor: quantidadeClientes.toString(),
       icone: Users,
     },
 

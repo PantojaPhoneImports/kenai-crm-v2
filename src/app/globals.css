@@ -127,4 +127,74 @@
   html {
     @apply font-sans;
   }
+  body {
+    @apply min-w-0 overflow-x-hidden;
+  }
+}
+
+@media (max-width: 639px) {
+  .grid.grid-cols-2,
+  .grid.grid-cols-3,
+  .grid.grid-cols-4,
+  .grid.grid-cols-6 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  input, select, textarea, button {
+    min-height: 2.75rem;
+  }
+
+  .mobile-card-table,
+  .mobile-card-table tbody,
+  .mobile-card-table tr,
+  .mobile-card-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .mobile-card-table thead {
+    display: none;
+  }
+
+  .mobile-card-table tbody {
+    padding: 0.75rem;
+  }
+
+  .mobile-card-table tr {
+    margin-bottom: 0.75rem;
+    border: 1px solid rgb(39 39 42);
+    border-radius: 0.75rem;
+    background: rgb(24 24 27);
+  }
+
+  .mobile-card-table td {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem;
+    text-align: right;
+  }
+
+  .mobile-card-table td::before {
+    content: attr(data-label);
+    flex: 0 0 42%;
+    color: rgb(161 161 170);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .mobile-card-table td:has(.mobile-actions) {
+    justify-content: stretch;
+  }
+
+  .mobile-card-table td:has(.mobile-actions)::before {
+    display: none;
+  }
+}
+
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
 }

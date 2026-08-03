@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-import { AuthProvider } from "../contexts/AuthContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import Providers from "./providers";
+import RuntimeDiagnostics from "@/components/common/RuntimeDiagnostics";
 
 export const metadata: Metadata = {
   title: {
@@ -54,13 +43,13 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
       <body className="bg-zinc-950 text-white antialiased">
-        <AuthProvider>
+        <Providers>
+          <RuntimeDiagnostics origem="RootLayout" />
           {children}
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

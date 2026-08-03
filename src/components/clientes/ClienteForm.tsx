@@ -1,11 +1,12 @@
 "use client";
-
-import { useState } from "react";
+import { listarSocios } from "@/services/socios";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { criarCliente } from "@/services/clientes";
 import { buscarCEP } from "../../services/cep";
 import { useAuth } from "@/contexts/AuthContext";
+import { possuiSocioId, usuarioEhSocio } from "@/lib/socio";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,15 @@ export default function ClienteForm() {
   const router = useRouter();
 
   const { usuario } = useAuth();
+const [socios, setSocios] = useState<any[]>([]);
+useEffect(() => {
+  carregarSocios();
+}, []);
+
+async function carregarSocios() {
+  const dados = await listarSocios();
+  setSocios(dados);
+}
 
   const [loading, setLoading] = useState(false);
 
@@ -39,6 +49,8 @@ export default function ClienteForm() {
     nomeMae: "",
     nomePai: "",
     observacoes: "",
+    socioId: "",
+socioNome: "",
   });
 
   function handleChange(
@@ -70,40 +82,39 @@ export default function ClienteForm() {
 
   async function salvarCliente() {
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
+  try {
+    const socioIdUsuario = usuario?.socioId;
 
-      const dadosCliente: any = {
-        ...form,
-      };
-
-      // Se for sócio, grava o vínculo automaticamente
-      if (usuario?.perfil === "SOCIO") {
-
-  dadosCliente.socioId = usuario.socioId;
-
-  dadosCliente.socioNome = usuario.nome;
-
-}
-
-      await criarCliente(dadosCliente);
-
-      alert("Cliente salvo com sucesso!");
-
-      router.push("/clientes");
-
-    } catch (error) {
-
-      console.error(error);
-
-      alert("Erro ao salvar cliente.");
-
+    if (usuarioEhSocio(usuario) && !possuiSocioId(socioIdUsuario)) {
+      throw new Error("O usuário sócio não possui um socioId válido.");
     }
 
-    setLoading(false);
+    const socioId = usuarioEhSocio(usuario) ? socioIdUsuario : form.socioId;
+    const socioNome = usuarioEhSocio(usuario) ? usuario?.nome || "" : form.socioNome;
 
+    if (!possuiSocioId(socioId)) {
+      throw new Error("Selecione o sócio responsável pelo cliente.");
+    }
+
+    await criarCliente({
+      ...form,
+      socioId,
+      socioNome,
+    });
+
+alert("Cliente salvo com sucesso!");
+
+router.push("/clientes");
+
+  } catch (error) {
+    console.error(error);
+    alert("Erro ao salvar cliente.");
   }
+
+  setLoading(false);
+}
 
   return (
 
@@ -116,7 +127,48 @@ export default function ClienteForm() {
       <div>
 
         <Label>Nome Completo</Label>
+{usuario?.perfil !== "SOCIO" && (
 
+  <div>
+
+    <Label>Sócio Responsável</Label>
+
+    <select
+      value={form.socioId}
+      onChange={(e) => {
+
+        const socio = socios.find(
+          (s) => s.id === e.target.value
+        );
+
+        setForm((old) => ({
+          ...old,
+          socioId: socio?.id || "",
+          socioNome: socio?.nome || "",
+        }));
+
+      }}
+      className="w-full h-10 rounded-md border border-zinc-700 bg-zinc-950 px-3 text-white"
+    >
+
+      <option value="">
+        Selecione o Sócio
+      </option>
+
+      {socios.map((socio) => (
+        <option
+          key={socio.id}
+          value={socio.id}
+        >
+          {socio.nome}
+        </option>
+      ))}
+
+    </select>
+
+  </div>
+
+)}
         <Input
           name="nome"
           value={form.nome}

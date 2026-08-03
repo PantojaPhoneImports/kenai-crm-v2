@@ -9,6 +9,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { calcularFinanceiroSocio } from "@/services/calculosFinanceiros";
 
 const repassesRef = collection(
   db,
@@ -19,9 +20,34 @@ const repassesRef = collection(
 export async function criarRepasse(
   dados: any
 ) {
+  const quantidadeParcelas = Math.max(Number(dados.parcelas || 1), 1);
+  const calculo = calcularFinanceiroSocio({
+    tipoSocio: dados.tipoSocio,
+    capitalInvestido: Number(dados.capitalInvestido || 0),
+    entrada: Number(dados.entrada || 0),
+    lucroTotal: Number(dados.lucroTotal || 0),
+    parcelas: quantidadeParcelas,
+  });
+
   const ref = await addDoc(
     repassesRef,
-    dados
+    {
+      ...dados,
+      tipoSocio: calculo.tipoSocio,
+      parcelas: quantidadeParcelas,
+      capitalRecuperado: calculo.capitalRecuperadoEntrada,
+      capitalRestante: calculo.capitalRestante,
+      capitalPorParcela: calculo.capitalPorParcela,
+      lucroSocioPorParcela: calculo.lucroSocioPorParcela,
+      lucroEmpresaPorParcela: calculo.lucroEmpresaPorParcela,
+      socioRecebido: calculo.capitalRecuperadoEntrada,
+      empresaRecebido: 0,
+      totalSocioReceber: calculo.capitalRestante + calculo.lucroSocioTotal,
+      totalEmpresaReceber: calculo.lucroEmpresaTotal,
+      valorReceber:
+        calculo.socioPorParcela * quantidadeParcelas +
+        calculo.empresaPorParcela * quantidadeParcelas,
+    }
   );
 
   return ref.id;

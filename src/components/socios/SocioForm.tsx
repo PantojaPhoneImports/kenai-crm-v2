@@ -10,6 +10,7 @@ import {
 } from "@/services/socios";
 
 import type { Socio } from "@/services/socios";
+import { vincularUsuarioAoSocio } from "@/services/usuarios";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -153,21 +154,20 @@ dados.percentualLucro || 100
         socio
       );
 
+      await vincularUsuarioAoSocio(socio.email, id, socio.nome);
+
       alert(
         "Sócio atualizado com sucesso!"
       );
 
     } else {
 
-      await criarSocio(
-        socio
-      );
+  const socioId = await criarSocio(socio);
+  await vincularUsuarioAoSocio(socio.email, socioId, socio.nome);
 
-      alert(
-        "Sócio cadastrado com sucesso!"
-      );
+  alert("Sócio cadastrado com sucesso!");
 
-    }
+}
 
     router.push("/socios");
 

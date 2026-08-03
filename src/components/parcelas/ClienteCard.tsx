@@ -251,7 +251,7 @@ export default function ClienteCard({
 
         <div>
 
-          <div className="grid grid-cols-6 gap-6 bg-zinc-800 px-6 py-4 text-sm font-semibold text-zinc-400">
+          <div className="hidden grid-cols-6 gap-6 bg-zinc-800 px-6 py-4 text-sm font-semibold text-zinc-400 sm:grid">
 
             <div>
 
@@ -314,4 +314,3 @@ export default function ClienteCard({
   );
 
 }
-    

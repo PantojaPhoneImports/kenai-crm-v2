@@ -6,15 +6,15 @@ export default function LoginPage() {
 
   return (
 
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center relative overflow-hidden">
+    <div className="relative isolate flex min-h-[100dvh] items-center justify-center overflow-hidden bg-zinc-950 px-4 py-6 sm:px-6">
 
       {/* Fundo */}
 
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black" />
 
-      <div className="absolute w-[500px] h-[500px] rounded-full bg-blue-600/10 blur-3xl -top-40 -left-40" />
+      <div className="pointer-events-none absolute -left-40 -top-40 size-[500px] rounded-full bg-blue-600/10 blur-3xl" />
 
-      <div className="absolute w-[450px] h-[450px] rounded-full bg-yellow-500/10 blur-3xl bottom-0 right-0" />
+      <div className="pointer-events-none absolute bottom-0 right-0 size-[450px] rounded-full bg-yellow-500/10 blur-3xl" />
 
       <div className="relative z-10 w-full max-w-md">
 

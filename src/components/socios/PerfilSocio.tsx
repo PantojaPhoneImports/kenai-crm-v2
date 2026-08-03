@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { calcularResumoSocio } from "@/services/resumoFinanceiro";
 import {
@@ -19,7 +18,6 @@ interface Props {
 }
 
 export default function PerfilSocio({ id }: Props) {
-
   const [socio, setSocio] = useState<any>(null);
 
   const [capital, setCapital] = useState(0);

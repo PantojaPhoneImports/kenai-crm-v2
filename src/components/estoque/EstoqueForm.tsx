@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { criarProduto } from "@/services/estoque";
 import { listarSocios } from "@/services/socios";
+import { useAuth } from "@/contexts/AuthContext";
+import { possuiSocioId, usuarioEhSocio } from "@/lib/socio";
 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,7 @@ import { Button } from "@/components/ui/button";
 export default function EstoqueForm() {
 
   const router = useRouter();
+  const { usuario } = useAuth();
 
   const [socios, setSocios] =
     useState<any[]>([]);
@@ -59,11 +62,20 @@ tipoSocio: "PARCEIRO",
 
 
 
-  useEffect(()=>{
-
+  useEffect(() => {
     carregarSocios();
+  }, []);
 
-  },[]);
+  useEffect(() => {
+    const socioIdUsuario = usuario?.socioId;
+    if (!usuarioEhSocio(usuario) || !possuiSocioId(socioIdUsuario)) return;
+
+    setProduto((old) => ({
+      ...old,
+      socioId: socioIdUsuario,
+      socioNome: usuario?.nome || "",
+    }));
+  }, [usuario]);
 
 
 
@@ -158,10 +170,20 @@ tipoSocio: "PARCEIRO",
 
     try{
 
+      if (usuarioEhSocio(usuario)) {
+        const socioIdUsuario = usuario?.socioId;
+        if (!possuiSocioId(socioIdUsuario)) {
+          throw new Error("O usuário sócio não possui um socioId válido.");
+        }
 
-      await criarProduto(
-        produto
-      );
+        await criarProduto({
+          ...produto,
+          socioId: socioIdUsuario,
+          socioNome: usuario?.nome || "",
+        });
+      } else {
+        await criarProduto(produto);
+      }
 
 
       alert(

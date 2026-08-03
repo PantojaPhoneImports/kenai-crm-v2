@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
-
 import { listarVendas } from "@/services/vendas";
+import { filtrarPorSocio } from "@/lib/socio";
 
 export default function VendasTable() {
   const { usuario } = useAuth();
@@ -18,31 +18,25 @@ export default function VendasTable() {
   }, [usuario]);
 
   async function carregarVendas() {
-    let lista = await listarVendas();
+    const lista = await listarVendas();
+    const vendasVisiveis = filtrarPorSocio(lista, usuario);
 
-    console.log("USUARIO:", usuario);
-    console.log("SOCIO:", usuario?.socioId);
+    console.info("[vendas] usuario.socioId antes do filtro", usuario?.socioId);
+    console.info("[vendas] todas as vendas retornadas", lista.map(({ id, produtoNome, socioId, status }) => ({ id, produtoNome, socioId, status })));
+    console.info("[vendas] vendas aprovadas pelo filtro", vendasVisiveis.map(({ id, produtoNome, socioId, status }) => ({ id, produtoNome, socioId, status })));
+    console.info(
+      "[vendas] vendas rejeitadas pelo filtro",
+      lista
+        .filter((venda) => !vendasVisiveis.some((visivel) => visivel.id === venda.id))
+        .map(({ id, produtoNome, socioId, status }) => ({ id, produtoNome, socioId, status }))
+    );
 
-    if (usuario?.perfil === "SOCIO") {
-      lista = lista.filter((venda: any) => {
-        console.log(
-          venda.produtoNome,
-          venda.socioId,
-          usuario?.socioId
-        );
-
-        return venda.socioId === usuario?.socioId;
-      });
-    }
-
-    console.log("TOTAL VENDAS:", lista.length);
-
-    setVendas(lista);
+    setVendas(vendasVisiveis);
   }
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-      <table className="w-full">
+      <table className="mobile-card-table w-full">
         <thead className="bg-zinc-800">
           <tr>
             <th className="p-4 text-left text-zinc-300">
@@ -77,27 +71,27 @@ export default function VendasTable() {
               key={venda.id}
               className="border-t border-zinc-800 hover:bg-zinc-800/40 transition"
             >
-              <td className="p-4 text-white">
+              <td data-label="Cliente" className="p-4 text-white">
                 {venda.clienteNome}
               </td>
 
-              <td className="p-4 text-zinc-300">
+              <td data-label="Produto" className="p-4 text-zinc-300">
                 {venda.produtoNome}
               </td>
 
-              <td className="p-4 text-center text-green-400">
+              <td data-label="Valor" className="p-4 text-center text-green-400">
                 R$ {Number(venda.valorProduto).toFixed(2)}
               </td>
 
-              <td className="p-4 text-center">
+              <td data-label="Entrada" className="p-4 text-center">
                 R$ {Number(venda.entrada).toFixed(2)}
               </td>
 
-              <td className="p-4 text-center">
+              <td data-label="Parcelas" className="p-4 text-center">
                 {venda.parcelas}x
               </td>
 
-              <td className="p-4 text-center">
+              <td data-label="Status" className="p-4 text-center">
                 <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
                   {venda.status}
                 </span>

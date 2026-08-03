@@ -38,13 +38,13 @@ export default function ParcelaItem({
 
   return (
 
-    <div className="border-t border-zinc-800 px-6 py-5 hover:bg-zinc-800/40 transition">
+    <div className="border-t border-zinc-800 px-4 py-5 transition hover:bg-zinc-800/40 sm:px-6">
 
-      <div className="grid grid-cols-6 gap-6 items-center">
+      <div className="grid grid-cols-6 items-center gap-3 sm:gap-6">
 
         <div>
 
-          <p className="text-white font-semibold">
+          <p className="text-white font-semibold before:mr-2 before:text-xs before:font-medium before:text-zinc-500 before:content-['Produto:'] sm:before:hidden">
 
             {parcela.produtoNome}
 
@@ -52,9 +52,9 @@ export default function ParcelaItem({
 
         </div>
 
-        <div className="text-center">
+        <div className="text-left sm:text-center">
 
-          <span className="text-zinc-300">
+          <span className="text-zinc-300 before:mr-2 before:text-xs before:font-medium before:text-zinc-500 before:content-['Parcela:'] sm:before:hidden">
 
             {parcela.parcela}/{parcela.totalParcelas}
 
@@ -62,13 +62,13 @@ export default function ParcelaItem({
 
         </div>
 
-        <div className="text-center">
+        <div className="text-left sm:text-center">
 
           <span
             className={
               atrasada
-                ? "text-red-400 font-bold"
-                : "text-zinc-300"
+                ? "text-red-400 font-bold before:mr-2 before:text-xs before:font-medium before:text-zinc-500 before:content-['Vencimento:'] sm:before:hidden"
+                : "text-zinc-300 before:mr-2 before:text-xs before:font-medium before:text-zinc-500 before:content-['Vencimento:'] sm:before:hidden"
             }
           >
 
@@ -78,9 +78,9 @@ export default function ParcelaItem({
 
         </div>
 
-        <div className="text-center">
+        <div className="text-left sm:text-center">
 
-          <span className="text-green-400 font-bold">
+          <span className="text-green-400 font-bold before:mr-2 before:text-xs before:font-medium before:text-zinc-500 before:content-['Valor:'] sm:before:hidden">
 
             {Number(parcela.valor).toLocaleString(
               "pt-BR",
@@ -94,7 +94,7 @@ export default function ParcelaItem({
 
         </div>
 
-        <div className="text-center">
+        <div className="text-left sm:text-center">
 
           {parcela.status === "PAGA" ? (
 
@@ -124,7 +124,7 @@ export default function ParcelaItem({
 
         </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
 
           {telefone && (
 

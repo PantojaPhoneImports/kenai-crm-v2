@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import {
   Line,
   LineChart,
@@ -18,6 +20,12 @@ const data = [
 ];
 
 export default function DashboardChart() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
       <h2 className="text-white text-xl font-semibold mb-6">
@@ -25,23 +33,25 @@ export default function DashboardChart() {
       </h2>
 
       <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
-            <CartesianGrid stroke="#27272a" />
+        {mounted && (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data}>
+              <CartesianGrid stroke="#27272a" />
 
-            <XAxis
-              dataKey="mes"
-              stroke="#a1a1aa"
-            />
+              <XAxis
+                dataKey="mes"
+                stroke="#a1a1aa"
+              />
 
-            <Line
-              type="monotone"
-              dataKey="vendas"
-              stroke="#2563eb"
-              strokeWidth={4}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+              <Line
+                type="monotone"
+                dataKey="vendas"
+                stroke="#2563eb"
+                strokeWidth={4}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

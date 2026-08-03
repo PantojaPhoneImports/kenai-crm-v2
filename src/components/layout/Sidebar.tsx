@@ -48,7 +48,7 @@ export default function Sidebar() {
 
   return (
 
-    <aside className="w-72 min-h-screen bg-zinc-950 border-r border-zinc-800 flex flex-col">
+    <aside className="sticky top-0 hidden h-[100dvh] min-h-0 w-72 flex-col overflow-hidden border-r border-zinc-800 bg-zinc-950 lg:flex">
 
       {/* LOGO */}
 
@@ -105,7 +105,7 @@ export default function Sidebar() {
 
       {/* MENU */}
 
-      <nav className="flex-1 px-4 space-y-2">
+      <nav className="touch-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto px-4 py-2 overscroll-contain">
 
         {menuFiltrado.map((item) => {
 
@@ -171,14 +171,20 @@ export default function Sidebar() {
 
       {/* BOTÃO SAIR */}
 
-      <div className="p-5 border-t border-zinc-800">
+      <div className="shrink-0 border-t border-zinc-800 p-5">
 
         <button
 
           onClick={async () => {
 
+            console.warn("[layout:sidebar] logout manual acionado", {
+              email: usuario?.email ?? null,
+            });
             await logout();
 
+            console.warn("[layout:sidebar] redirecionando manualmente para /login", {
+              motivo: "usuário acionou o botão Sair",
+            });
             window.location.href = "/login";
 
           }}

@@ -17,7 +17,7 @@ export default function ParcelasFiltro({
 
     <div className="flex items-center justify-between">
 
-      <div className="relative w-[420px]">
+      <div className="relative w-full sm:w-[420px]">
 
         <Search
           size={18}

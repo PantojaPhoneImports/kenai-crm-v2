@@ -40,4 +40,9 @@ export interface Cliente {
 
   observacoes: string;
 
+  /** ID do documento do sócio responsável em `socios`. */
+  socioId?: string;
+
+  socioNome?: string;
+
 }

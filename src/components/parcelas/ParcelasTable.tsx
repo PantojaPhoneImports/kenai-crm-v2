@@ -13,6 +13,7 @@ import ClienteCard from "./ClienteCard";
 import ParcelasResumo from "./ParcelasResumo";
 import ParcelasFiltro from "./ParcelasFiltro";
 import CentralCobrancas from "./CentralCobrancas";
+import { filtrarPorSocio } from "@/lib/socio";
 
 export default function ParcelasTable() {
 
@@ -35,17 +36,7 @@ export default function ParcelasTable() {
 
     let dados = await listarParcelas();
 
-    if (usuario?.perfil === "SOCIO") {
-
-      dados = dados.filter(
-
-        (parcela: any) =>
-
-          parcela.socioId === usuario.id
-
-      );
-
-    }
+    dados = filtrarPorSocio(dados, usuario);
 
     dados.sort((a: any, b: any) => {
 

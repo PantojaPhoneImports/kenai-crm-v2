@@ -19,6 +19,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { filtrarPorSocio } from "@/lib/socio";
 
 export default function ClienteTable() {
 
@@ -41,16 +42,7 @@ export default function ClienteTable() {
 
     let dados = await listarClientes();
 
-    if (usuario?.perfil === "SOCIO") {
-
-  dados = dados.filter(
-    (cliente: any) =>
-      cliente.socioId === usuario.socioId
-  );
-
-}
-
-    setClientes(dados);
+    setClientes(filtrarPorSocio(dados, usuario));
 
   }
 
@@ -94,9 +86,9 @@ export default function ClienteTable() {
 
     <div className="space-y-6">
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
-        <div className="relative w-96">
+        <div className="relative w-full sm:w-96">
 
           <Search
             size={18}
@@ -114,7 +106,7 @@ export default function ClienteTable() {
 
         <Link href="/clientes/novo">
 
-          <Button>
+          <Button className="w-full sm:w-auto">
 
             Novo Cliente
 
@@ -126,7 +118,7 @@ export default function ClienteTable() {
 
       <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
 
-        <table className="w-full">
+        <table className="mobile-card-table w-full">
 
           <thead className="bg-zinc-800">
 
@@ -172,7 +164,7 @@ export default function ClienteTable() {
                   className="border-t border-zinc-800 hover:bg-zinc-800/40 transition-colors"
                 >
 
-                  <td className="p-4 text-white">
+                  <td data-label="Nome" className="p-4 text-white">
 
                     <Link
                       href={`/clientes/ficha/${cliente.id}`}
@@ -185,15 +177,15 @@ export default function ClienteTable() {
 
                   </td>
 
-                  <td className="p-4">{cliente.cpf}</td>
+                  <td data-label="CPF" className="p-4">{cliente.cpf}</td>
 
-                  <td className="p-4">{cliente.telefone}</td>
+                  <td data-label="Telefone" className="p-4">{cliente.telefone}</td>
 
-                  <td className="p-4">{cliente.profissao}</td>
+                  <td data-label="Profissão" className="p-4">{cliente.profissao}</td>
 
-                  <td className="p-4">
+                  <td data-label="Ações" className="p-4">
 
-                    <div className="flex justify-center gap-2">
+                    <div className="mobile-actions flex w-full justify-end gap-2">
 
                       <Link href={`/clientes/ficha/${cliente.id}`}>
 

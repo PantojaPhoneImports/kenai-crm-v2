@@ -11,11 +11,14 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import type { Parcela } from "@/types/parcela";
 
 import {
   buscarRepasseVenda,
   atualizarRepasse,
 } from "@/services/repasses";
+import { calcularFinanceiroPago } from "@/services/calculosFinanceiros";
+import { buscarVendaPorId } from "@/services/vendas";
 
 
 const parcelasRef = collection(
@@ -25,7 +28,7 @@ const parcelasRef = collection(
 
 
 export async function criarParcela(
-  parcela: any
+  parcela: Omit<Parcela, "id">
 ) {
 
   await addDoc(
@@ -36,7 +39,7 @@ export async function criarParcela(
 }
 
 
-export async function listarParcelas() {
+export async function listarParcelas(): Promise<Parcela[]> {
 
   const q = query(
     parcelasRef,
@@ -56,7 +59,7 @@ export async function listarParcelas() {
 
       id: docItem.id,
 
-      ...docItem.data(),
+      ...(docItem.data() as Omit<Parcela, "id">),
 
     })
   );
@@ -169,68 +172,38 @@ export async function receberParcela(
   if(!repasse)
     return;
 
+  const venda = await buscarVendaPorId(parcela.vendaId);
 
 
-  const valorParcela =
-    Number(
-      parcela.valor || 0
-    );
+  const quantidadeParcelas = Math.max(Number(repasse.parcelas || 1), 1);
+  const entrada = Number(repasse.entrada || 0);
+  const capitalPorParcela = Number(repasse.capitalPorParcela || 0);
+  const parcelasPagasAntes = capitalPorParcela > 0
+    ? Math.round((Number(repasse.capitalRecuperado || 0) - entrada) / capitalPorParcela)
+    : 0;
+  const calculo = calcularFinanceiroPago({
+    tipoSocio: repasse.tipoSocio,
+    capitalInvestido: Number(repasse.capitalInvestido || 0),
+    entrada,
+    lucroTotal: Number(repasse.lucroTotal || 0),
+    custoProduto: Number(repasse.custoProduto || venda?.custoProduto || 0),
+    parcelas: quantidadeParcelas,
+  }, parcelasPagasAntes + 1);
 
-
-
-  const capitalParcela =
-  Number(repasse.capitalPorParcela || 0);
-
-const lucroSocioParcela =
-  Number(repasse.lucroSocioPorParcela || 0);
-
-const lucroEmpresaParcela =
-  Number(repasse.lucroEmpresaPorParcela || 0);
-
-const parteSocio =
-  capitalParcela +
-  lucroSocioParcela;
-
-const parteEmpresa =
-  lucroEmpresaParcela;
-
-
-
-  const novoCapitalRecuperado =
-  Number(repasse.capitalRecuperado || 0) +
-  capitalParcela;
-
-const novoCapitalRestante =
-  Math.max(
-    Number(repasse.capitalRestante || 0) -
-    capitalParcela,
-    0
-  );
-
-const novoSocioRecebido =
-  Number(repasse.socioRecebido || 0) +
-  parteSocio;
-
-const novaEmpresaRecebido =
-  Number(repasse.empresaRecebido || 0) +
-  parteEmpresa;
-
-const novoValorReceber =
-  Math.max(
-    Number(repasse.valorReceber || 0) -
-    valorParcela,
+  const novoValorReceber = Math.max(
+    calculo.socioReceber + calculo.empresaReceber,
     0
   );
 
 await atualizarRepasse(repasse.id, {
 
-  socioRecebido: novoSocioRecebido,
+  socioRecebido: calculo.socioRecebido,
 
-  empresaRecebido: novaEmpresaRecebido,
+  empresaRecebido: calculo.empresaRecebido,
 
-  capitalRecuperado: novoCapitalRecuperado,
+  capitalRecuperado: calculo.capitalRecuperado,
 
-  capitalRestante: novoCapitalRestante,
+  capitalRestante: calculo.capitalRestante,
 
   valorReceber: novoValorReceber,
 

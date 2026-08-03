@@ -19,19 +19,35 @@ export async function listarClientes(): Promise<Cliente[]> {
 
   const snapshot = await getDocs(clientesRef);
 
-  return snapshot.docs.map((docItem) => ({
-
+  const lista = snapshot.docs.map((docItem) => ({
     id: docItem.id,
-
     ...(docItem.data() as Cliente),
-
   }));
 
+  console.log("LISTA DE CLIENTES:");
+  console.table(
+    lista.map((c: any) => ({
+      nome: c.nome,
+      socioId: c.socioId,
+    }))
+  );
+
+  return lista;
 }
 
 export async function criarCliente(cliente: Cliente) {
 
-  await addDoc(clientesRef, cliente);
+  console.log("CLIENTE RECEBIDO NO SERVICE:");
+  console.log(cliente);
+
+  const docRef = await addDoc(clientesRef, cliente);
+
+  console.log("ID DO DOCUMENTO:", docRef.id);
+
+  const snap = await getDoc(docRef);
+
+  console.log("DOCUMENTO GRAVADO:");
+  console.log(snap.data());
 
 }
 
