@@ -16,4 +16,8 @@ export interface Parcela {
   dataPagamento?: string;
   formaPagamento?: string;
   observacao?: string;
+  ultimaCobranca?: string;
+  dataUltimaCobranca?: string;
+  tipoMensagem?: string;
+  statusEnvio?: string;
 }

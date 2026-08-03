@@ -8,6 +8,7 @@ import {
   Building2,
   Settings,
   CreditCard,
+  MessageCircle,
   Landmark,
   Receipt,
   BarChart3,
@@ -39,6 +40,11 @@ export const menu = [
     title: "Parcelas",
     href: "/parcelas",
     icon: CreditCard,
+  },
+  {
+    title: "Cobrança WhatsApp",
+    href: "/cobranca-whatsapp",
+    icon: MessageCircle,
   },
   {
     title: "Financeiro",

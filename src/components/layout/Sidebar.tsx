@@ -40,6 +40,8 @@ export default function Sidebar() {
 
       "/financeiro",
 
+      "/cobranca-whatsapp",
+
     ];
 
     return permitido.includes(item.href);
