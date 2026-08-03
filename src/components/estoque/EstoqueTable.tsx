@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +17,7 @@ export default function EstoqueTable() {
   const { usuario } = useAuth();
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [filtro, setFiltro] = useState<"TODOS" | "DISPONIVEL" | "VENDIDO" | "DIOGO" | "ANTONIO">("TODOS");
 
   useEffect(() => {
     if (usuario) {
@@ -43,7 +44,28 @@ export default function EstoqueTable() {
     carregarProdutos();
   }
 
+  const resumo = useMemo(() => ({
+    total: produtos.length,
+    disponiveis: produtos.filter((produto) => produto.status === "DISPONIVEL").length,
+    vendidos: produtos.filter((produto) => produto.status === "VENDIDO").length,
+    investido: produtos.reduce((total, produto) => total + Number(produto.custo || 0), 0),
+    valorEstoque: produtos.reduce((total, produto) => total + Number(produto.venda || 0), 0),
+  }), [produtos]);
+  const produtosFiltrados = useMemo(() => produtos.filter((produto) => {
+    if (filtro === "DISPONIVEL" || filtro === "VENDIDO") return produto.status === filtro;
+    if (filtro === "DIOGO") return produto.socioNome?.toLowerCase().includes("diogo");
+    if (filtro === "ANTONIO") return produto.socioNome?.toLowerCase().includes("antonio");
+    return true;
+  }), [produtos, filtro]);
+
   return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+        {[["Total aparelhos", resumo.total], ["Disponíveis", resumo.disponiveis], ["Vendidos", resumo.vendidos], ["Valor investido", resumo.investido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })], ["Valor em estoque", resumo.valorEstoque.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })]].map(([titulo, valor]) => <div key={String(titulo)} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4"><p className="text-xs text-zinc-400">{titulo}</p><p className="mt-1 text-lg font-bold text-white">{valor}</p></div>)}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {[['TODOS','Todos'],['DISPONIVEL','Disponíveis'],['VENDIDO','Vendidos'],['DIOGO','Diogo'],['ANTONIO','Antônio']].map(([valor, titulo]) => <button key={valor} onClick={() => setFiltro(valor as typeof filtro)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${filtro === valor ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}>{titulo}</button>)}
+      </div>
     <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
       <table className="mobile-card-table w-full">
         <thead className="bg-zinc-800">
@@ -60,7 +82,7 @@ export default function EstoqueTable() {
         </thead>
 
         <tbody>
-          {produtos.map((produto) => (
+          {produtosFiltrados.map((produto) => (
             <tr
               key={produto.id}
               className="border-t border-zinc-800 hover:bg-zinc-800/40 transition"
@@ -156,6 +178,7 @@ export default function EstoqueTable() {
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }
