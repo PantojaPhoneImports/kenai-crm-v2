@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
 import { receberParcela } from "@/services/parcelas";
+import { buscarProdutoPorId } from "@/services/estoque";
+import ReciboPagamento from "./ReciboPagamento";
 
 interface Props {
   parcela: any;
@@ -23,6 +25,16 @@ export default function ReceberParcela({
 
   const [loading, setLoading] =
     useState(false);
+  const [produto, setProduto] = useState<{ cor?: string; imei?: string } | null>(null);
+  const [paga, setPaga] = useState(parcela.status === "PAGA");
+
+  useEffect(() => {
+    if (!parcela.produtoId) return;
+
+    buscarProdutoPorId(parcela.produtoId)
+      .then(setProduto)
+      .catch((error) => console.error("Erro ao carregar aparelho da parcela:", error));
+  }, [parcela.produtoId]);
 
   async function receber() {
 
@@ -45,8 +57,7 @@ export default function ReceberParcela({
       alert("Parcela recebida com sucesso!");
 
       router.refresh();
-
-      router.back();
+      setPaga(true);
 
     } catch (error) {
 
@@ -82,6 +93,36 @@ export default function ReceberParcela({
 
       <div>
 
+        <Label>Cor</Label>
+
+        <p className="mt-2 text-white">
+          {produto?.cor || "Não informada"}
+        </p>
+
+      </div>
+
+      <div>
+
+        <Label>IMEI</Label>
+
+        <p className="mt-2 text-white">
+          {produto?.imei || "Não informado"}
+        </p>
+
+      </div>
+
+      <div>
+
+        <Label>Sócio responsável</Label>
+
+        <p className="mt-2 text-white">
+          {parcela.socioNome || "Não informado"}
+        </p>
+
+      </div>
+
+      <div>
+
         <Label>Produto</Label>
 
         <p className="mt-2 text-white">
@@ -92,13 +133,25 @@ export default function ReceberParcela({
 
       <div>
 
-        <Label>Parcela</Label>
+        <Label>Quantidade de parcelas</Label>
 
         <p className="mt-2 text-white">
-          {parcela.parcela}/{parcela.totalParcelas}
+          {parcela.totalParcelas}
         </p>
 
       </div>
+
+      <div>
+
+        <Label>Parcela atual</Label>
+
+        <p className="mt-2 text-white">
+          {parcela.parcela} de {parcela.totalParcelas}
+        </p>
+
+      </div>
+
+      {!paga && <>
 
       <div>
 
@@ -152,7 +205,17 @@ export default function ReceberParcela({
 
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      </>}
+
+      {paga ? (
+        <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-5">
+          <p className="font-semibold text-green-400">Pagamento confirmado.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <ReciboPagamento parcela={{ ...parcela, status: "PAGA", dataPagamento: new Date().toISOString() }} />
+            <Button variant="outline" onClick={() => router.push("/parcelas")}>Voltar para parcelas</Button>
+          </div>
+        </div>
+      ) : <div className="grid grid-cols-2 gap-4">
 
         <Button
           variant="outline"
@@ -175,7 +238,7 @@ export default function ReceberParcela({
 
         </Button>
 
-      </div>
+      </div>}
 
     </div>
 

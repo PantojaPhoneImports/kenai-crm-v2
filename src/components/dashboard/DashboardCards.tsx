@@ -35,6 +35,7 @@ export default function DashboardCards() {
   });
 
   const [quantidadeClientes, setQuantidadeClientes] = useState(0);
+  const [estoquePorSocio, setEstoquePorSocio] = useState({ diogo: 0, antonio: 0 });
 
   useEffect(() => {
 
@@ -42,6 +43,26 @@ export default function DashboardCards() {
       carregar();
     }
 
+  }, [usuario]);
+
+  useEffect(() => {
+    if (!usuario) return;
+
+    return onSnapshot(collection(db, "estoque"), (snapshot) => {
+      const disponiveis = filtrarPorSocio(
+        snapshot.docs.map((documento) => ({ id: documento.id, ...documento.data() })),
+        usuario
+      ).filter((produto: any) => produto.status === "DISPONIVEL");
+
+      setEstoquePorSocio({
+        diogo: disponiveis.filter((produto: any) =>
+          String(produto.socioNome || "").toLowerCase().includes("diogo")
+        ).length,
+        antonio: disponiveis.filter((produto: any) =>
+          String(produto.socioNome || "").toLowerCase().includes("antonio")
+        ).length,
+      });
+    }, (error) => console.error("Erro ao atualizar estoque por sócio:", error));
   }, [usuario]);
 
   useEffect(() => {
@@ -134,11 +155,24 @@ export default function DashboardCards() {
       icone: ShoppingCart,
     },
 
+    ...(usuario?.perfil?.toUpperCase() === "SOCIO" ? [] : [
+      {
+        titulo: "Aparelhos do Diogo",
+        valor: estoquePorSocio.diogo.toString(),
+        icone: Smartphone,
+      },
+      {
+        titulo: "Aparelhos do Antonio",
+        valor: estoquePorSocio.antonio.toString(),
+        icone: Smartphone,
+      },
+    ]),
+
   ];
 
   return (
 
-    <div className="grid grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
 
       {cards.map((card) => {
 

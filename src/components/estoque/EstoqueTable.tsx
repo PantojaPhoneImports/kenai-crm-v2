@@ -53,7 +53,7 @@ export default function EstoqueTable() {
             <th className="p-4 text-left text-zinc-300">Modelo</th>
             <th className="p-4 text-left text-zinc-300">IMEI</th>
             <th className="p-4 text-left text-zinc-300">Venda</th>
-            <th className="p-4 text-left text-zinc-300">Investidor</th>
+            <th className="p-4 text-left text-zinc-300">Sócio Responsável</th>
             <th className="p-4 text-center text-zinc-300">Status</th>
             <th className="p-4 text-center text-zinc-300">Ações</th>
           </tr>
@@ -85,10 +85,15 @@ export default function EstoqueTable() {
                 R$ {Number(produto.venda).toFixed(2)}
               </td>
 
-              <td data-label="Investidor" className="p-4">
+              <td data-label="Sócio Responsável" className="p-4">
                 {produto.socioNome ? (
-                  <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-semibold">
-                    👤 {produto.socioNome}
+                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
+                    produto.socioNome.toLowerCase().includes("diogo")
+                      ? "bg-cyan-500/20 text-cyan-300"
+                      : "bg-violet-500/20 text-violet-300"
+                  }`}>
+                    <span className="size-2 rounded-full bg-current" />
+                    {produto.socioNome}
                   </span>
                 ) : (
                   <span className="text-zinc-500">

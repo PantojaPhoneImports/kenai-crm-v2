@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import ReciboPagamento from "./ReciboPagamento";
 
 import {
   gerarMensagemWhatsapp,
@@ -40,7 +41,7 @@ export default function ParcelaItem({
 
     <div className="border-t border-zinc-800 px-4 py-5 transition hover:bg-zinc-800/40 sm:px-6">
 
-      <div className="grid grid-cols-6 items-center gap-3 sm:gap-6">
+      <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-6 sm:gap-6">
 
         <div>
 
@@ -161,6 +162,8 @@ export default function ParcelaItem({
             </Link>
 
           )}
+
+          {parcela.status === "PAGA" && <ReciboPagamento parcela={parcela} />}
 
           <Link href={`/parcelas/editar/${parcela.id}`}>
 
