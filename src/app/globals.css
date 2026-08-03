@@ -198,3 +198,15 @@
 .touch-scroll {
   -webkit-overflow-scrolling: touch;
 }
+
+/* Mantém o menu rolável, mas sem a barra nativa visível. */
+.sidebar-menu-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.sidebar-menu-scroll::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}

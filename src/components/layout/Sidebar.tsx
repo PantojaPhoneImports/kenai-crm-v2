@@ -52,7 +52,7 @@ export default function Sidebar() {
 
       {/* LOGO */}
 
-      <div className="p-6 border-b border-zinc-800">
+      <div className="shrink-0 p-6 border-b border-zinc-800">
 
         <div className="flex justify-center">
 
@@ -83,7 +83,7 @@ export default function Sidebar() {
 
       {/* USUÁRIO */}
 
-      <div className="p-6">
+      <div className="shrink-0 p-6">
 
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
 
@@ -105,7 +105,7 @@ export default function Sidebar() {
 
       {/* MENU */}
 
-      <nav className="touch-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto px-4 py-2 overscroll-contain">
+      <nav className="sidebar-menu-scroll touch-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto px-4 py-2 overscroll-contain">
 
         {menuFiltrado.map((item) => {
 

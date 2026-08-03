@@ -58,7 +58,7 @@ export default function Header() {
                 <p className="text-lg font-bold">KENAI CRM</p>
                 <p className="text-sm text-zinc-400">{usuario?.nome || "Usuário"}</p>
               </div>
-              <nav className="touch-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto py-5 overscroll-contain">
+              <nav className="sidebar-menu-scroll touch-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto py-5 overscroll-contain">
                 {menuFiltrado.map((item) => {
                   const Icon = item.icon;
                   const ativo = pathname === item.href;
