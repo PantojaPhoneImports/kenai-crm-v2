@@ -49,16 +49,18 @@ export default function DashboardCards() {
     if (!usuario) return;
 
     return onSnapshot(collection(db, "estoque"), (snapshot) => {
-      const disponiveis = filtrarPorSocio(
+      // Mantém exatamente o mesmo critério da tela Estoque: todos os produtos
+      // visíveis ao usuário autenticado, sem restringir pelo status do aparelho.
+      const produtos = filtrarPorSocio(
         snapshot.docs.map((documento) => ({ id: documento.id, ...documento.data() })),
         usuario
-      ).filter((produto: any) => produto.status === "DISPONIVEL");
+      );
 
       setEstoquePorSocio({
-        diogo: disponiveis.filter((produto: any) =>
+        diogo: produtos.filter((produto: any) =>
           String(produto.socioNome || "").toLowerCase().includes("diogo")
         ).length,
-        antonio: disponiveis.filter((produto: any) =>
+        antonio: produtos.filter((produto: any) =>
           String(produto.socioNome || "").toLowerCase().includes("antonio")
         ).length,
       });
