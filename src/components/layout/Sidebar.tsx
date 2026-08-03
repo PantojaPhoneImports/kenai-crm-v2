@@ -48,7 +48,7 @@ export default function Sidebar() {
 
   return (
 
-    <aside className="sticky top-0 hidden h-[100dvh] min-h-0 w-72 flex-col overflow-hidden border-r border-zinc-800 bg-zinc-950 lg:flex">
+    <aside className="hidden min-h-screen w-72 shrink-0 flex-col overflow-x-hidden border-r border-zinc-800 bg-zinc-950 lg:flex">
 
       {/* LOGO */}
 
@@ -105,7 +105,7 @@ export default function Sidebar() {
 
       {/* MENU */}
 
-      <nav className="sidebar-menu-scroll touch-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto px-4 py-2 overscroll-contain">
+      <nav className="shrink-0 space-y-2 overflow-x-hidden px-4 py-2">
 
         {menuFiltrado.map((item) => {
 
@@ -171,7 +171,7 @@ export default function Sidebar() {
 
       {/* BOTÃO SAIR */}
 
-      <div className="shrink-0 border-t border-zinc-800 p-5">
+      <div className="mt-auto shrink-0 border-t border-zinc-800 p-5">
 
         <button
 
