@@ -62,7 +62,7 @@ export default function Header() {
                 {menuFiltrado.map((item) => {
                   const Icon = item.icon;
                   const ativo = pathname === item.href;
-                  return <Link key={item.href} href={item.href} onClick={() => setMenuAberto(false)} className={`flex min-h-12 items-center gap-3 rounded-xl px-4 ${ativo ? "bg-blue-600 text-white" : "text-zinc-300 hover:bg-zinc-900"}`}><Icon size={20} />{item.title}</Link>;
+                  return <Link key={item.href} href={item.href} onClick={() => setMenuAberto(false)} className={`flex min-h-12 items-center gap-3 rounded-xl px-4 ${ativo ? "bg-amber-500 text-zinc-950" : "text-zinc-300 hover:bg-zinc-900"}`}><Icon size={20} />{item.title}</Link>;
                 })}
               </nav>
               <div className="shrink-0 border-t border-zinc-800 py-4 [padding-bottom:env(safe-area-inset-bottom)]">
@@ -87,7 +87,7 @@ export default function Header() {
 
         <div className="flex items-center gap-2 sm:gap-3">
 
-          <div className="w-11 h-11 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+          <div className="w-11 h-11 rounded-full bg-amber-500 flex items-center justify-center text-zinc-950 font-bold">
 
             {inicial}
 

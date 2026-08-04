@@ -11,7 +11,7 @@ import {
 } from "@/services/estoque";
 
 import { Produto } from "@/types/produto";
-import { filtrarPorSocio } from "@/lib/socio";
+import { filtrarPorSocio, usuarioEhSocio } from "@/lib/socio";
 
 export default function EstoqueTable() {
   const { usuario } = useAuth();
@@ -57,6 +57,7 @@ export default function EstoqueTable() {
     if (filtro === "ANTONIO") return produto.socioNome?.toLowerCase().includes("antonio");
     return true;
   }), [produtos, filtro]);
+  const ehSocio = usuarioEhSocio(usuario);
 
   return (
     <div className="space-y-5">
@@ -64,7 +65,7 @@ export default function EstoqueTable() {
         {[["Total aparelhos", resumo.total], ["Disponíveis", resumo.disponiveis], ["Vendidos", resumo.vendidos], ["Valor investido", resumo.investido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })], ["Valor em estoque", resumo.valorEstoque.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })]].map(([titulo, valor]) => <div key={String(titulo)} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4"><p className="text-xs text-zinc-400">{titulo}</p><p className="mt-1 text-lg font-bold text-white">{valor}</p></div>)}
       </div>
       <div className="flex flex-wrap gap-2">
-        {[['TODOS','Todos'],['DISPONIVEL','Disponíveis'],['VENDIDO','Vendidos'],['DIOGO','Diogo'],['ANTONIO','Antônio']].map(([valor, titulo]) => <button key={valor} onClick={() => setFiltro(valor as typeof filtro)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${filtro === valor ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}>{titulo}</button>)}
+        {(ehSocio ? [['TODOS','Todos'],['DISPONIVEL','Disponíveis'],['VENDIDO','Vendidos']] : [['TODOS','Todos'],['DISPONIVEL','Disponíveis'],['VENDIDO','Vendidos'],['DIOGO','Diogo'],['ANTONIO','Antônio']]).map(([valor, titulo]) => <button key={valor} onClick={() => setFiltro(valor as typeof filtro)} className={`rounded-lg px-3 py-2 text-sm font-semibold shadow-sm transition-all duration-200 hover:-translate-y-0.5 ${filtro === valor ? "bg-amber-500 text-zinc-950 shadow-amber-500/20 hover:bg-amber-400" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"}`}>{titulo}</button>)}
       </div>
     <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
       <table className="mobile-card-table w-full">
@@ -75,7 +76,7 @@ export default function EstoqueTable() {
             <th className="p-4 text-left text-zinc-300">Modelo</th>
             <th className="p-4 text-left text-zinc-300">IMEI</th>
             <th className="p-4 text-left text-zinc-300">Venda</th>
-            <th className="p-4 text-left text-zinc-300">Sócio Responsável</th>
+            <th className="p-4 text-left text-zinc-300">Responsável</th>
             <th className="p-4 text-center text-zinc-300">Status</th>
             <th className="p-4 text-center text-zinc-300">Ações</th>
           </tr>
@@ -107,7 +108,7 @@ export default function EstoqueTable() {
                 R$ {Number(produto.venda).toFixed(2)}
               </td>
 
-              <td data-label="Sócio Responsável" className="p-4">
+              <td data-label="Responsável" className="p-4">
                 {produto.socioNome ? (
                   <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
                     produto.socioNome.toLowerCase().includes("diogo")
@@ -115,7 +116,7 @@ export default function EstoqueTable() {
                       : "bg-violet-500/20 text-violet-300"
                   }`}>
                     <span className="size-2 rounded-full bg-current" />
-                    {produto.socioNome}
+                    {ehSocio && produto.socioId === usuario?.socioId ? "Você" : produto.socioNome}
                   </span>
                 ) : (
                   <span className="text-zinc-500">

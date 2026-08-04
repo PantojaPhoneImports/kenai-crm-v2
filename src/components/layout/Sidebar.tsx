@@ -145,7 +145,7 @@ export default function Sidebar() {
 
                   ativo
 
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+                    ? "bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20"
 
                     : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
 

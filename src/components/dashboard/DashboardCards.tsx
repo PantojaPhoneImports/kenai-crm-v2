@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { filtrarPorSocio } from "@/lib/socio";
+import { filtrarPorSocio, usuarioEhSocio } from "@/lib/socio";
 
 import {
   DollarSign,
@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   PiggyBank,
   HandCoins,
+  TrendingUp,
 } from "lucide-react";
 
 import { carregarDashboard } from "@/services/dashboard";
@@ -32,6 +33,7 @@ export default function DashboardCards() {
     valorInvestido: 0,
     valorEstoque: 0,
     faturamento: 0,
+    lucro: 0,
   });
 
   const [quantidadeClientes, setQuantidadeClientes] = useState(0);
@@ -47,6 +49,10 @@ export default function DashboardCards() {
 
   useEffect(() => {
     if (!usuario) return;
+    if (usuarioEhSocio(usuario)) {
+      setEstoquePorSocio({ diogo: 0, antonio: 0 });
+      return;
+    }
 
     return onSnapshot(collection(db, "estoque"), (snapshot) => {
       // Mantém exatamente o mesmo critério da tela Estoque: todos os produtos
@@ -101,7 +107,13 @@ export default function DashboardCards() {
 
   }
 
-  const cards = [
+  const cards = usuarioEhSocio(usuario) ? [
+    { titulo: "Meu estoque", valor: dados.estoque.toString(), icone: Smartphone },
+    { titulo: "Meu investimento", valor: `R$ ${dados.valorInvestido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icone: PiggyBank },
+    { titulo: "Minhas vendas", valor: dados.vendas.toString(), icone: ShoppingCart },
+    { titulo: "Meu lucro", valor: `R$ ${dados.lucro.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icone: TrendingUp },
+    { titulo: "Meu faturamento", valor: `R$ ${dados.faturamento.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icone: DollarSign },
+  ] : [
 
     {
       titulo: "Valor Investido",
@@ -157,18 +169,8 @@ export default function DashboardCards() {
       icone: ShoppingCart,
     },
 
-    ...(usuario?.perfil?.toUpperCase() === "SOCIO" ? [] : [
-      {
-        titulo: "Aparelhos do Diogo",
-        valor: estoquePorSocio.diogo.toString(),
-        icone: Smartphone,
-      },
-      {
-        titulo: "Aparelhos do Antonio",
-        valor: estoquePorSocio.antonio.toString(),
-        icone: Smartphone,
-      },
-    ]),
+    { titulo: "Aparelhos do Diogo", valor: estoquePorSocio.diogo.toString(), icone: Smartphone },
+    { titulo: "Aparelhos do Antonio", valor: estoquePorSocio.antonio.toString(), icone: Smartphone },
 
   ];
 
@@ -184,7 +186,7 @@ export default function DashboardCards() {
 
           <div
             key={card.titulo}
-            className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 hover:border-blue-600 transition-all duration-300 hover:scale-[1.02]"
+            className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 shadow-lg shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/70 hover:shadow-amber-500/10"
           >
 
             <div className="flex items-center justify-between">
@@ -201,7 +203,7 @@ export default function DashboardCards() {
 
               </div>
 
-              <div className="bg-blue-600 rounded-xl p-3">
+              <div className="bg-amber-500 rounded-xl p-3 shadow-lg shadow-amber-500/20">
 
                 <Icon
                   size={24}

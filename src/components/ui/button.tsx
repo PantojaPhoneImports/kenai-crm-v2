@@ -8,15 +8,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        default: "bg-amber-500 text-zinc-950 shadow-sm shadow-amber-500/20 hover:bg-amber-400 hover:shadow-amber-500/30",
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 hover:text-white aria-expanded:bg-zinc-700 aria-expanded:text-white",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-zinc-700 text-zinc-100 hover:bg-zinc-600 aria-expanded:bg-zinc-600 aria-expanded:text-white",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "bg-red-600 text-white hover:bg-red-500 focus-visible:border-red-400 focus-visible:ring-red-400/30",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

@@ -74,6 +74,11 @@ let listaParcelas = parcelas.docs.map((d) => ({
         total + Number(venda.valorProduto || 0),
       0
     );
+    const lucro = listaVendas.reduce(
+      (total: number, venda: any) =>
+        total + (Number(venda.valorProduto || 0) - Number(venda.custoProduto || 0)),
+      0
+    );
 
     const parcelasPendentes = listaParcelas.filter(
       (p: any) => p.status === "PENDENTE"
@@ -93,6 +98,7 @@ let listaParcelas = parcelas.docs.map((d) => ({
       valorInvestido,
       valorEstoque,
       faturamento,
+      lucro,
 
     };
 
@@ -110,6 +116,7 @@ let listaParcelas = parcelas.docs.map((d) => ({
       valorInvestido: 0,
       valorEstoque: 0,
       faturamento: 0,
+      lucro: 0,
 
     };
 
