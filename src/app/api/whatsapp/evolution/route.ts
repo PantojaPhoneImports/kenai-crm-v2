@@ -53,13 +53,37 @@ function erroComDiagnostico(error: unknown) {
   const value = error as Error & { diagnostic?: unknown };
   return { error: value?.message || String(error), diagnostic: value?.diagnostic || diagnosticoErro(error, "src/app/api/whatsapp/evolution/route.ts") };
 }
-function estado(data: any) { const value = data?.instance?.state || data?.instance?.status || data?.state || "close"; return value === "open" ? "CONECTADO" : value === "connecting" ? "CONECTANDO" : "DESCONECTADO"; }
+function estado(data: any) { const value = data?.instance?.state || data?.instance?.status || data?.instance?.connectionStatus || data?.connectionStatus || data?.state || "close"; return ["open", "connected"].includes(String(value).toLowerCase()) ? "CONECTADO" : ["connecting", "qrcode"].includes(String(value).toLowerCase()) ? "CONECTANDO" : "DESCONECTADO"; }
 function qr(data: any) { return data?.qrcode?.base64 || data?.base64 || data?.qrcode || null; }
+function mensagemResposta(resposta: EvolutionResponse) { return typeof resposta.data?.message === "string" ? resposta.data.message : JSON.stringify(logBody(resposta.data)); }
+function instanciaDaLista(data: any, nome: string) {
+  const lista = Array.isArray(data) ? data : (Array.isArray(data?.instances) ? data.instances : []);
+  return lista.find((item: any) => (item?.instance?.instanceName || item?.instanceName || item?.name) === nome) || null;
+}
+function jaExiste(resposta: EvolutionResponse) { return resposta.status === 409 || /already exists|already exist|instance exists|já existe/i.test(mensagemResposta(resposta)); }
 async function garantirInstancia() {
-  const { instancia } = configuracao(); const atual = await evolution(`/instance/connectionState/${encodeURIComponent(instancia)}`);
-  if (atual.status !== 404) { if (atual.status >= 400) throw new Error(atual.data?.message || "Não foi possível consultar a instância Evolution."); return { data: atual.data, criada: false }; }
+  const { instancia } = configuracao();
+  // Em v2.3.x, fetchInstances diferencia "instância inexistente" de "rota inexistente".
+  const lista = await evolution("/instance/fetchInstances");
+  if (lista.status === 200) {
+    const encontrada = instanciaDaLista(lista.data, instancia);
+    if (encontrada) { console.info("[Evolution] instância localizada em fetchInstances", { instance: instancia }); return { data: encontrada, criada: false }; }
+  } else if (lista.status === 401 || lista.status === 403) {
+    throw new Error(`Não foi possível listar instâncias: HTTP ${lista.status} — ${mensagemResposta(lista)}`);
+  } else {
+    // Compatibilidade com proxies/versões que não expõem fetchInstances.
+    console.info("[Evolution] fetchInstances indisponível; tentando endpoints alternativos", { status: lista.status, body: logBody(lista.data) });
+    for (const endpoint of [`/instance/${encodeURIComponent(instancia)}`, `/instances/${encodeURIComponent(instancia)}`, `/instance/connectionState/${encodeURIComponent(instancia)}`]) {
+      const atual = await evolution(endpoint);
+      if (atual.status >= 200 && atual.status < 300) return { data: atual.data, criada: false };
+      if (atual.status === 401 || atual.status === 403) throw new Error(`Falha de autenticação em ${endpoint}: HTTP ${atual.status} — ${mensagemResposta(atual)}`);
+    }
+  }
   const criada = await evolution("/instance/create", { method: "POST", body: JSON.stringify({ instanceName: instancia, integration: "WHATSAPP-BAILEYS", qrcode: true }) });
-  if (criada.status >= 400) throw new Error(criada.data?.message || "Não foi possível criar a instância Evolution."); return { data: criada.data, criada: true };
+  if (criada.status >= 200 && criada.status < 300) return { data: criada.data, criada: true };
+  // A API pode responder conflito se outra sessão criou a instância entre a listagem e o POST.
+  if (jaExiste(criada)) { console.info("[Evolution] instância já existia durante POST create; conectando sem recriar", { instance: instancia }); return { data: { instance: { instanceName: instancia, status: "connecting" } }, criada: false }; }
+  throw new Error(`Não foi possível criar a instância Evolution: HTTP ${criada.status} — ${mensagemResposta(criada)}`);
 }
 async function conexao(obterQr = false) {
   const { instancia } = configuracao(); const resultado = await garantirInstancia(); let dados = resultado.data; let codigoQr = qr(dados);
