@@ -25,12 +25,16 @@ function configuracao() {
 }
 async function requisicao(url: string, apiKey: string, endpoint: string, init: RequestInit): Promise<EvolutionResponse> {
   const method = init.method || "GET";
-  console.info("[Evolution] requisição", { url, endpoint, method });
+  const headers = new Headers(init.headers);
+  // Evolution API v2.3.7 exige exatamente o header `apikey`.
+  headers.set("apikey", apiKey.trim());
+  headers.set("Content-Type", "application/json");
+  console.info("[Evolution] requisição", { url, endpoint, method, authHeader: "apikey", apiKeyConfigured: Boolean(apiKey) });
   try {
-    const resposta = await fetch(url, { ...init, headers: { apikey: apiKey, "Content-Type": "application/json", ...init.headers }, cache: "no-store", signal: AbortSignal.timeout(15_000) });
+    const resposta = await fetch(url, { ...init, headers, cache: "no-store", signal: AbortSignal.timeout(15_000) });
     const texto = await resposta.text(); let data: any = {};
     try { data = texto ? JSON.parse(texto) : {}; } catch { data = { rawBody: texto }; }
-    console.info("[Evolution] resposta", { endpoint, method, httpStatus: resposta.status, body: logBody(data) });
+    console.info("[Evolution] resposta", { endpoint, method, authHeader: "apikey", httpStatus: resposta.status, body: logBody(data) });
     return { status: resposta.status, data, endpoint, method };
   } catch (error) {
     const detalhe = diagnosticoErro(error, "src/app/api/whatsapp/evolution/route.ts:requisicao:fetch");
@@ -61,10 +65,16 @@ function instanciaDaLista(data: any, nome: string) {
   return lista.find((item: any) => (item?.instance?.instanceName || item?.instanceName || item?.name) === nome) || null;
 }
 function jaExiste(resposta: EvolutionResponse) { return resposta.status === 409 || /already exists|already exist|instance exists|já existe/i.test(mensagemResposta(resposta)); }
+async function validarAutenticacao() {
+  console.info("[Evolution] teste de autenticação", { endpoint: "/instance/fetchInstances", method: "GET", authHeader: "apikey" });
+  const resultado = await evolution("/instance/fetchInstances");
+  if (resultado.status === 401) throw new Error(`Autenticação Evolution recusada: HTTP 401 — ${mensagemResposta(resultado)}. A versão 2.3.7 exige o header apikey; confira o valor de EVOLUTION_API_KEY na Vercel.`);
+  return resultado;
+}
 async function garantirInstancia() {
   const { instancia } = configuracao();
   // Em v2.3.x, fetchInstances diferencia "instância inexistente" de "rota inexistente".
-  const lista = await evolution("/instance/fetchInstances");
+  const lista = await validarAutenticacao();
   if (lista.status === 200) {
     const encontrada = instanciaDaLista(lista.data, instancia);
     if (encontrada) { console.info("[Evolution] instância localizada em fetchInstances", { instance: instancia }); return { data: encontrada, criada: false }; }
