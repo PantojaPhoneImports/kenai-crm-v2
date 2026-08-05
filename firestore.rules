@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Prefer the Firebase Auth custom claim. The document fallback becomes
+    // available after the usuarios/{uid} migration described in the report.
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.perfil in ['ADMIN', 'ADMINISTRADOR'] ||
+        (
+          exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil in ['ADMIN', 'ADMINISTRADOR']
+        )
+      );
+    }
+
+    function isOwnUserByUid(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // Temporary compatibility for the current collection, whose documents
+    // were created with random IDs and are looked up by email by the app.
+    function isOwnUserByEmail() {
+      return signedIn() && resource.data.email == request.auth.token.email;
+    }
+
+    match /usuarios/{userId} {
+      allow get: if isAdmin() || isOwnUserByUid(userId) || isOwnUserByEmail();
+      allow list: if isAdmin() || isOwnUserByEmail();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // No other collection is changed by this ruleset. Keep the default closed
+    // until each collection receives an explicit production policy.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
