@@ -77,8 +77,10 @@ export function AuthProvider({
             console.info("[auth:context] buscando usuário de acesso", {
               email: firebaseUser.email || "",
               uid: firebaseUser.uid,
+              caminhoFirestore: "/databases/(default)/documents/usuarios",
+              consulta: 'where("email", "==", email)',
             });
-            const dadosUsuario = await buscarUsuarioPorEmail(firebaseUser.email || "");
+            const dadosUsuario = await buscarUsuarioPorEmail(firebaseUser.email || "", { uid: firebaseUser.uid });
 
             console.info("[auth:context] usuário entrando no contexto", {
               uid: firebaseUser.uid,
@@ -97,6 +99,7 @@ export function AuthProvider({
               email: firebaseUser.email,
               code: firebaseError.code,
               message: firebaseError.message,
+              stack: error instanceof Error ? error.stack : undefined,
               error,
             });
             throw error;

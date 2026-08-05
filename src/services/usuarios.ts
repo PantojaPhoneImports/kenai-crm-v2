@@ -12,7 +12,8 @@ import {
 import { db } from "@/lib/firebase";
 import type { Usuario } from "@/types/usuario";
 
-const usuariosRef = collection(db, "usuarios");
+const USUARIOS_PATH = "usuarios";
+const usuariosRef = collection(db, USUARIOS_PATH);
 
 function usuarioParaLog(usuario: Usuario | null) {
   if (!usuario) return null;
@@ -53,9 +54,20 @@ export async function excluirUsuario(id: string) {
 }
 
 export async function buscarUsuarioPorEmail(
-  email: string
+  email: string,
+  contexto?: { uid?: string }
 ): Promise<Usuario | null> {
-  console.info("[usuarios:busca] iniciando leitura da coleção usuarios", { email });
+  const consulta = {
+    caminhoFirestore: `/databases/(default)/documents/${USUARIOS_PATH}`,
+    colecao: USUARIOS_PATH,
+    operador: "where",
+    campo: "email",
+    comparador: "==",
+    valor: email,
+    uidAutenticado: contexto?.uid ?? null,
+    emailAutenticado: email,
+  };
+  console.info("[usuarios:busca] iniciando leitura da coleção usuarios", consulta);
   const q = query(
     usuariosRef,
     where("email", "==", email)
@@ -64,6 +76,7 @@ export async function buscarUsuarioPorEmail(
   try {
     const snapshot = await getDocs(q);
     console.info("[usuarios:busca] consulta concluída", {
+      ...consulta,
       email,
       documentosEncontrados: snapshot.size,
       vazio: snapshot.empty,
@@ -90,9 +103,10 @@ export async function buscarUsuarioPorEmail(
   } catch (error) {
     const firebaseError = error as { code?: string; message?: string };
     console.error("[usuarios:busca] falha na leitura da coleção usuarios", {
-      email,
+      ...consulta,
       code: firebaseError.code,
       message: firebaseError.message,
+      stack: error instanceof Error ? error.stack : undefined,
       error,
     });
     throw error;

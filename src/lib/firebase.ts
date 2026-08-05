@@ -26,6 +26,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+console.info("[firebase] inicialização", {
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain,
+  firestoreDatabase: "(default)",
+});
+
 export const db = getFirestore(app);
 
 export const auth = getAuth(app);
