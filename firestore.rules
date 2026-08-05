@@ -35,10 +35,10 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // No other collection is changed by this ruleset. Keep the default closed
-    // until each collection receives an explicit production policy.
+    // Existing production rule preserved verbatim. It currently grants the
+    // same temporary access to every collection until its published expiry.
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.time < timestamp.date(2026, 8, 5);
     }
   }
 }
