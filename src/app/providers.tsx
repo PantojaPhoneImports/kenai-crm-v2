@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function Providers({
   children,
@@ -20,5 +21,5 @@ export default function Providers({
     console.info("[diagnostics:providers] rota atualizada", { pathname });
   }, [pathname]);
 
-  return <AuthProvider>{children}</AuthProvider>;
+  return <AuthProvider>{children}<Toaster richColors closeButton /></AuthProvider>;
 }
