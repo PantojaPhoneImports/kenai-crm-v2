@@ -5,24 +5,32 @@ import { useEffect, useState } from "react";
 import {
   collection,
   getDocs,
+  query,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { usuarioEhSocio } from "@/lib/socio";
 
 export default function RepassesTable() {
+
+  const { usuario } = useAuth();
 
   const [repasses, setRepasses] =
     useState<any[]>([]);
 
   useEffect(() => {
-    carregar();
-  }, []);
+    if (usuario) carregar();
+  }, [usuario]);
 
   async function carregar() {
 
     const snapshot =
       await getDocs(
-        collection(db, "repasses")
+        usuarioEhSocio(usuario)
+          ? query(collection(db, "repasses"), where("socioId", "==", usuario?.socioId))
+          : collection(db, "repasses")
       );
 
     const lista = snapshot.docs.map((doc) => ({

@@ -56,7 +56,7 @@ const [tipoSocioFinanceiro, setTipoSocioFinanceiro] = useState<string | undefine
       const socioIdUsuario = usuario?.socioId;
       if (!possuiSocioId(socioIdUsuario)) return;
 
-      const parcelas = await listarParcelas();
+      const parcelas = await listarParcelas(socioIdUsuario);
 
       const resumo = await calcularResumoSocio(socioIdUsuario);
       setRecebido(resumo.recebido);

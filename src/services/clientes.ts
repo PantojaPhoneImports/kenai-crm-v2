@@ -15,9 +15,9 @@ import { Cliente } from "@/types/cliente";
 
 const clientesRef = collection(db, "clientes");
 
-export async function listarClientes(): Promise<Cliente[]> {
+export async function listarClientes(socioId?: string): Promise<Cliente[]> {
 
-  const snapshot = await getDocs(clientesRef);
+  const snapshot = await getDocs(socioId ? query(clientesRef, where("socioId", "==", socioId)) : clientesRef);
 
   const lista = snapshot.docs.map((docItem) => ({
     id: docItem.id,

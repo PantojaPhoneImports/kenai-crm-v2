@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { toast } from "sonner";
 import { AlertCircle, CheckCircle2, Clock3, Loader2, MessageCircle, Send, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { filtrarPorSocio, usuarioEhSocio } from "@/lib/socio";
+import { usuarioEhSocio } from "@/lib/socio";
 import { atualizarCobranca, criarCobranca, jaExisteCobrancaHoje, obterConfiguracaoCobranca, registrarLog } from "@/services/cobrancas";
 import { whatsappProvider } from "@/lib/whatsapp/providers";
 import type { ProviderWhatsapp } from "@/types/cobranca";
@@ -46,9 +46,9 @@ export default function CentralWhatsapp() {
   const [providerAtivo, setProviderAtivo] = useState<ProviderWhatsapp>("WAME");
   const [progresso, setProgresso] = useState<Progresso | null>(null);
 
-  useEffect(() => { if (!usuario) return; return onSnapshot(query(collection(db, "parcelas"), orderBy("vencimento", "asc")), s => { setParcelas(filtrarPorSocio(s.docs.map(d => ({ id: d.id, ...d.data() })), usuario).filter((p: any) => p.status !== "PAGA")); setCarregando(false); }); }, [usuario]);
-  useEffect(() => onSnapshot(query(collection(db, "cobrancaLogs"), orderBy("data", "desc")), s => setLogs(s.docs.map(d => d.data() as LogCobranca)), () => setLogs([])), []);
-  useEffect(() => { if (ehSocio) return; obterConfiguracaoCobranca().then(config => setProviderAtivo(config?.providerAtivo || "WAME")).catch(error => console.error("[Cobrança WhatsApp] erro ao descobrir provider ativo", error)); }, [ehSocio]);
+  useEffect(() => { if (!usuario) return; const consulta = ehSocio ? query(collection(db, "parcelas"), where("socioId", "==", usuario.socioId)) : query(collection(db, "parcelas"), orderBy("vencimento", "asc")); return onSnapshot(consulta, s => { setParcelas(s.docs.map(d => ({ id: d.id, ...d.data() })).filter((p: any) => p.status !== "PAGA")); setCarregando(false); }, () => setCarregando(false)); }, [usuario, ehSocio]);
+  useEffect(() => { if (!usuario || ehSocio) { setLogs([]); return; } return onSnapshot(query(collection(db, "cobrancaLogs"), orderBy("data", "desc")), s => setLogs(s.docs.map(d => d.data() as LogCobranca)), () => setLogs([])); }, [usuario, ehSocio]);
+  useEffect(() => { if (!usuario || ehSocio) return; obterConfiguracaoCobranca().then(config => setProviderAtivo(config?.providerAtivo || "WAME")).catch(error => console.error("[Cobrança WhatsApp] erro ao descobrir provider ativo", error)); }, [usuario, ehSocio]);
 
   const logDoCliente = (p: any) => logs.filter(log => log.cliente === p.clienteNome || (!!p.clienteTelefone && log.telefone === p.clienteTelefone));
   const resumo = useMemo(() => { const enviados = logs.filter(log => hoje(log.data) && log.resultado === "ENVIADA"); const erros = logs.filter(log => hoje(log.data) && log.resultado === "ERRO"); const tentativas = enviados.length + erros.length; return { ATRASO: parcelas.filter(p => categoria(p) === "ATRASO"), HOJE: parcelas.filter(p => categoria(p) === "HOJE"), AMANHA: parcelas.filter(p => categoria(p) === "AMANHA"), ENVIADOS: enviados, ERROS: erros, PENDENTES: parcelas.filter(p => !logDoCliente(p).some(log => hoje(log.data))), TAXA: tentativas ? Math.round((enviados.length / tentativas) * 100) : 0 }; }, [parcelas, logs]);

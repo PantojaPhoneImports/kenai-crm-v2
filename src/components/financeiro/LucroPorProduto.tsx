@@ -5,10 +5,12 @@ import { useEffect, useState } from "react";
 import {
   collection,
   getDocs,
+  query,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
-import { filtrarPorSocio } from "@/lib/socio";
+import { usuarioEhSocio } from "@/lib/socio";
 
 export default function LucroPorProduto() {
 const { usuario } = useAuth();
@@ -16,8 +18,7 @@ const { usuario } = useAuth();
     useState<any[]>([]);
 
   useEffect(() => {
-
-    carregar();
+    if (usuario) carregar();
 
   }, [usuario]);
 
@@ -25,7 +26,9 @@ const { usuario } = useAuth();
 
     const snapshot =
       await getDocs(
-        collection(db, "repasses")
+        usuarioEhSocio(usuario)
+          ? query(collection(db, "repasses"), where("socioId", "==", usuario?.socioId))
+          : collection(db, "repasses")
       );
 
     let dados = snapshot.docs.map((doc) => ({
@@ -35,8 +38,6 @@ const { usuario } = useAuth();
   ...doc.data(),
 
 }));
-
-    dados = filtrarPorSocio(dados, usuario);
 
     dados.sort(
 

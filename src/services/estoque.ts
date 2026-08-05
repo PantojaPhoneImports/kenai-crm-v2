@@ -5,7 +5,9 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   updateDoc,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -36,8 +38,8 @@ function normalizarProduto(
   };
 }
 
-export async function listarProdutos(): Promise<Produto[]> {
-  const snapshot = await getDocs(estoqueRef);
+export async function listarProdutos(socioId?: string): Promise<Produto[]> {
+  const snapshot = await getDocs(socioId ? query(estoqueRef, where("socioId", "==", socioId)) : estoqueRef);
 
   return snapshot.docs.map((docItem) =>
     normalizarProduto(

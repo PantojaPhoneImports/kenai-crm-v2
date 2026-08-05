@@ -4,6 +4,8 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -47,10 +49,12 @@ export async function criarVenda(venda: Partial<Omit<Venda, "id">>) {
 
 }
 
-export async function listarVendas(): Promise<Venda[]> {
+export async function listarVendas(socioId?: string): Promise<Venda[]> {
 
   const snapshot = await getDocs(
-    collection(db, "vendas")
+    socioId
+      ? query(collection(db, "vendas"), where("socioId", "==", socioId))
+      : collection(db, "vendas")
   );
 
   return snapshot.docs.map((doc) => ({

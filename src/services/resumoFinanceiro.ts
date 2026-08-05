@@ -23,14 +23,13 @@ export function calcularResumoFinanceiro(vendas: Venda[], parcelas: any[]) {
 
 export async function calcularResumoSocio(socioId: string) {
   if (!possuiSocioId(socioId)) throw new Error("socioId é obrigatório para calcular o resumo financeiro.");
-  const [clientes, produtos, vendas, parcelas] = await Promise.all([listarClientes(), listarProdutos(), listarVendas(), listarParcelas()]);
-  const pertence = (item: any) => item.socioId === socioId;
-  const vendasSocio = vendas.filter(pertence) as Venda[];
-  const financeiro = calcularResumoFinanceiro(vendasSocio, parcelas.filter(pertence));
+  const [clientes, produtos, vendas, parcelas] = await Promise.all([listarClientes(socioId), listarProdutos(socioId), listarVendas(socioId), listarParcelas(socioId)]);
+  const vendasSocio = vendas as Venda[];
+  const financeiro = calcularResumoFinanceiro(vendasSocio, parcelas);
   return {
-    estoque: produtos.filter(pertence).length,
+    estoque: produtos.length,
     vendas: vendasSocio.length,
-    clientes: clientes.filter(pertence).length,
+    clientes: clientes.length,
     ...financeiro,
     tipoSocio: vendasSocio[0]?.tipoSocio,
     lucroTotal: financeiro.lucroRecebido + financeiro.lucroReceber,

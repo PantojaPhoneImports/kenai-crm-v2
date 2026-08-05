@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { listarParcelas, receberParcela } from "@/services/parcelas";
 import { listarVendas } from "@/services/vendas";
 import { calcularFinanceiroPago } from "@/services/calculosFinanceiros";
-import { filtrarPorSocio } from "@/lib/socio";
+import { usuarioEhSocio } from "@/lib/socio";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ReceberModal from "./ReceberModal";
@@ -36,9 +36,10 @@ export default function FinanceiroTable() {
   }, [usuario]);
 
   async function carregar() {
-    const [todasParcelas, todasVendas] = await Promise.all([listarParcelas(), listarVendas()]);
-    setParcelas(filtrarPorSocio(todasParcelas, usuario));
-    setVendas(filtrarPorSocio(todasVendas, usuario));
+    const socioId = usuarioEhSocio(usuario) ? usuario?.socioId : undefined;
+    const [todasParcelas, todasVendas] = await Promise.all([listarParcelas(socioId), listarVendas(socioId)]);
+    setParcelas(todasParcelas);
+    setVendas(todasVendas);
   }
 
   async function confirmarRecebimento(formaPagamento: string, dataPagamento: string, observacao: string) {

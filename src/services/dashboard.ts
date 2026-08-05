@@ -1,13 +1,14 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { filtrarPorSocio, type UsuarioAutenticado } from "@/lib/socio";
+import { filtrarPorSocio, possuiSocioId, usuarioEhSocio, type UsuarioAutenticado } from "@/lib/socio";
 
-async function consultarColecao(nome: string) {
+async function consultarColecao(nome: string, socioId?: string) {
   const inicio = performance.now();
   console.info("[dashboard] início da consulta", { colecao: nome });
 
   try {
-    const resultado = await getDocs(collection(db, nome));
+    const referencia = collection(db, nome);
+    const resultado = await getDocs(socioId ? query(referencia, where("socioId", "==", socioId)) : referencia);
     console.info("[dashboard] resultado da consulta", {
       colecao: nome,
       documentos: resultado.size,
@@ -37,12 +38,15 @@ export async function carregarDashboard(usuario?: UsuarioAutenticado | null) {
   });
 
   try {
+    const socioId = usuarioEhSocio(usuario) && possuiSocioId(usuario?.socioId)
+      ? usuario.socioId
+      : undefined;
     const [clientes, estoque, vendas, parcelas, socios] = await Promise.all([
-      consultarColecao("clientes"),
-      consultarColecao("estoque"),
-      consultarColecao("vendas"),
-      consultarColecao("parcelas"),
-      consultarColecao("socios"),
+      consultarColecao("clientes", socioId),
+      consultarColecao("estoque", socioId),
+      consultarColecao("vendas", socioId),
+      consultarColecao("parcelas", socioId),
+      usuarioEhSocio(usuario) ? Promise.resolve(null) : consultarColecao("socios"),
     ]);
 
     let listaClientes = clientes.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -59,7 +63,7 @@ export async function carregarDashboard(usuario?: UsuarioAutenticado | null) {
       clientes: listaClientes.length,
       estoque: listaEstoque.length,
       vendas: listaVendas.length,
-      socios: usuario?.perfil === "SOCIO" ? 0 : socios.size,
+      socios: usuarioEhSocio(usuario) ? 0 : socios?.size ?? 0,
       parcelasPendentes: listaParcelas.filter((p: any) => p.status === "PENDENTE").length,
       valorInvestido: listaEstoque.reduce((total: number, produto: any) => total + Number(produto.custo || 0), 0),
       valorEstoque: listaEstoque.reduce((total: number, produto: any) => total + Number(produto.venda || 0), 0),

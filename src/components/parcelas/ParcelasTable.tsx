@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { AlertTriangle, CheckCircle2, Users, Wallet } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { filtrarPorSocio } from "@/lib/socio";
+import { usuarioEhSocio } from "@/lib/socio";
 import { excluirParcela } from "@/services/parcelas";
 import ClienteCard from "./ClienteCard";
 import CentralCobrancas, { type ClienteCobranca } from "./CentralCobrancas";
@@ -33,9 +33,11 @@ export default function ParcelasTable() {
 
   useEffect(() => {
     if (!usuario) { setParcelas([]); return; }
-    const consulta = query(collection(db, "parcelas"), orderBy("vencimento", "asc"));
+    const consulta = usuarioEhSocio(usuario)
+      ? query(collection(db, "parcelas"), where("socioId", "==", usuario.socioId))
+      : query(collection(db, "parcelas"), orderBy("vencimento", "asc"));
     return onSnapshot(consulta, (snapshot) => {
-      const dados = filtrarPorSocio(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })), usuario);
+      const dados = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
       dados.sort((a: any, b: any) => (a.clienteNome || "").localeCompare(b.clienteNome || "") || (a.produtoNome || "").localeCompare(b.produtoNome || "") || Number(a.parcela) - Number(b.parcela));
       setParcelas(dados);
     }, (erro) => console.error("Erro ao atualizar parcelas:", erro));

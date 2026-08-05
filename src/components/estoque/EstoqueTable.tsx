@@ -11,7 +11,7 @@ import {
 } from "@/services/estoque";
 
 import { Produto } from "@/types/produto";
-import { filtrarPorSocio, usuarioEhSocio } from "@/lib/socio";
+import { usuarioEhSocio } from "@/lib/socio";
 
 export default function EstoqueTable() {
   const { usuario } = useAuth();
@@ -27,8 +27,8 @@ export default function EstoqueTable() {
 
   async function carregarProdutos() {
 
-    const dados = await listarProdutos();
-    setProdutos(filtrarPorSocio(dados, usuario));
+    const dados = await listarProdutos(usuarioEhSocio(usuario) ? usuario?.socioId : undefined);
+    setProdutos(dados);
 
 }
 

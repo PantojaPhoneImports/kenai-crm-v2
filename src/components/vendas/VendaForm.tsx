@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 
 import { Cliente } from "@/types/cliente";
 import { Produto } from "@/types/produto";
-import { filtrarPorSocio, pertenceAoSocio, usuarioEhSocio } from "@/lib/socio";
+import { pertenceAoSocio, usuarioEhSocio } from "@/lib/socio";
 import { useAuth } from "@/contexts/AuthContext";
 
 function descricaoProduto(produto: Produto) {
@@ -94,16 +94,15 @@ parcelas: 12,
 
     if (!usuario) return;
 
-    const listaClientes =
-      await listarClientes();
+    const socioId = usuarioEhSocio(usuario) ? usuario?.socioId : undefined;
+    const listaClientes = await listarClientes(socioId);
 
-    const listaProdutos =
-      await listarProdutos();
+    const listaProdutos = await listarProdutos(socioId);
 
-    setClientes(filtrarPorSocio(listaClientes, usuario));
+    setClientes(listaClientes);
 
     setProdutos(
-      filtrarPorSocio(listaProdutos, usuario).filter((p: Produto) => p.status === "DISPONIVEL")
+      listaProdutos.filter((p: Produto) => p.status === "DISPONIVEL")
     );
 
   }
@@ -154,7 +153,7 @@ parcelas: 12,
 
 if (!produto) return;
 
-const socio = produto.socioId
+const socio = !usuarioEhSocio(usuario) && produto.socioId
   ? await buscarSocio(produto.socioId)
   : null;
 

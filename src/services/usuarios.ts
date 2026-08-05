@@ -4,8 +4,10 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  getDoc,
   updateDoc,
   query,
+  setDoc,
   where,
 } from "firebase/firestore";
 
@@ -33,8 +35,10 @@ export async function listarUsuarios() {
   }));
 }
 
-export async function criarUsuario(usuario: Usuario) {
-  await addDoc(usuariosRef, usuario);
+export async function criarUsuario(usuario: Usuario, firebaseAuthUid: string) {
+  const uid = firebaseAuthUid.trim();
+  if (!uid) throw new Error("O UID do Firebase Auth é obrigatório para criar um usuário.");
+  await setDoc(doc(db, USUARIOS_PATH, uid), { ...usuario, id: uid });
 }
 
 export async function editarUsuario(
@@ -113,26 +117,55 @@ export async function buscarUsuarioPorEmail(
   }
 }
 
+/** Busca o perfil pelo ID canônico do usuário no Firebase Auth. */
+export async function buscarUsuarioPorUid(uid: string): Promise<Usuario | null> {
+  const caminho = `/databases/(default)/documents/${USUARIOS_PATH}/${uid}`;
+  const inicio = performance.now();
+  console.info("[usuarios:busca-uid] iniciando leitura", { uid, caminho });
+
+  try {
+    const snapshot = await getDoc(doc(db, USUARIOS_PATH, uid));
+    const dados = snapshot.exists()
+      ? ({ id: snapshot.id, ...(snapshot.data() as Omit<Usuario, "id">) })
+      : null;
+    console.info("[usuarios:busca-uid] consulta concluída", {
+      uid,
+      caminho,
+      encontrado: Boolean(dados),
+      duracaoMs: Math.round(performance.now() - inicio),
+    });
+    return dados;
+  } catch (error) {
+    const firebaseError = error as { code?: string; message?: string };
+    console.error("[usuarios:busca-uid] falha na leitura", {
+      uid,
+      caminho,
+      code: firebaseError.code,
+      message: firebaseError.message,
+      stack: error instanceof Error ? error.stack : undefined,
+      error,
+      duracaoMs: Math.round(performance.now() - inicio),
+    });
+    throw error;
+  }
+}
+
 /** Mantém o usuário de acesso ligado ao ID canônico de `socios`. */
 export async function vincularUsuarioAoSocio(
   email: string,
   socioId: string,
-  nome: string
+  nome: string,
+  firebaseAuthUid: string
 ) {
-  const existente = await buscarUsuarioPorEmail(email);
-
-  if (existente?.id) {
-    await editarUsuario(existente.id, { socioId, nome, perfil: "SOCIO" });
-    return existente.id;
-  }
-
-  const referencia = await addDoc(usuariosRef, {
+  const uid = firebaseAuthUid.trim();
+  if (!uid) throw new Error("O UID do Firebase Auth é obrigatório para vincular um sócio.");
+  await setDoc(doc(db, USUARIOS_PATH, uid), {
     email,
     nome,
     perfil: "SOCIO",
     ativo: true,
     socioId,
+    id: uid,
   } satisfies Usuario);
-
-  return referencia.id;
+  return uid;
 }

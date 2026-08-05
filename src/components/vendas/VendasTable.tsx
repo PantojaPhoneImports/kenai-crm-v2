@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { listarVendas } from "@/services/vendas";
-import { filtrarPorSocio } from "@/lib/socio";
+import { usuarioEhSocio } from "@/lib/socio";
 
 export default function VendasTable() {
   const { usuario } = useAuth();
@@ -18,18 +18,10 @@ export default function VendasTable() {
   }, [usuario]);
 
   async function carregarVendas() {
-    const lista = await listarVendas();
-    const vendasVisiveis = filtrarPorSocio(lista, usuario);
+    const vendasVisiveis = await listarVendas(usuarioEhSocio(usuario) ? usuario?.socioId : undefined);
 
     console.info("[vendas] usuario.socioId antes do filtro", usuario?.socioId);
-    console.info("[vendas] todas as vendas retornadas", lista.map(({ id, produtoNome, socioId, status }) => ({ id, produtoNome, socioId, status })));
-    console.info("[vendas] vendas aprovadas pelo filtro", vendasVisiveis.map(({ id, produtoNome, socioId, status }) => ({ id, produtoNome, socioId, status })));
-    console.info(
-      "[vendas] vendas rejeitadas pelo filtro",
-      lista
-        .filter((venda) => !vendasVisiveis.some((visivel) => visivel.id === venda.id))
-        .map(({ id, produtoNome, socioId, status }) => ({ id, produtoNome, socioId, status }))
-    );
+    console.info("[vendas] vendas retornadas pela consulta", vendasVisiveis.map(({ id, produtoNome, socioId, status }) => ({ id, produtoNome, socioId, status })));
 
     setVendas(vendasVisiveis);
   }

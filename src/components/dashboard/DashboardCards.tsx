@@ -95,7 +95,7 @@ export default function DashboardCards() {
   }, [usuario]);
 
   useEffect(() => {
-    if (!usuario) {
+    if (!usuario || usuarioEhSocio(usuario)) {
       setQuantidadeClientes(0);
       return;
     }

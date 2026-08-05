@@ -6,39 +6,137 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Prefer the Firebase Auth custom claim. The document fallback becomes
-    // available after the usuarios/{uid} migration described in the report.
+    // Claims are supported when present. The canonical usuarios/{uid} record
+    // is the fallback established by the migration, so existing accounts do
+    // not require a forced token refresh or an Admin SDK claim backfill.
     function isAdmin() {
       return signedIn() && (
-        request.auth.token.admin == true ||
-        request.auth.token.perfil in ['ADMIN', 'ADMINISTRADOR'] ||
-        (
-          exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil in ['ADMIN', 'ADMINISTRADOR']
-        )
+        (request.auth.token.keys().hasAny(['admin', 'perfil']) && (
+          request.auth.token.admin == true ||
+          request.auth.token.perfil in ['ADMIN', 'ADMINISTRADOR']
+        )) ||
+        (exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil in ['ADMIN', 'ADMINISTRADOR', 'Administrador'])
       );
     }
 
-    function isOwnUserByUid(userId) {
+    function isSocio() {
+      return signedIn() && (
+        (request.auth.token.keys().hasAll(['perfil', 'socioId']) &&
+          request.auth.token.perfil == 'SOCIO' &&
+          request.auth.token.socioId is string &&
+          request.auth.token.socioId != '') ||
+        (exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'SOCIO' &&
+          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.socioId is string &&
+          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.socioId != '')
+      );
+    }
+
+    function ownSocioDocument() {
+      return isSocio() && resource.data.socioId == socioIdAutenticado();
+    }
+
+    function ownSocioCreate() {
+      return isSocio() && request.resource.data.socioId == socioIdAutenticado();
+    }
+
+    function socioIdAutenticado() {
+      return request.auth.token.keys().hasAll(['perfil', 'socioId']) &&
+          request.auth.token.perfil == 'SOCIO'
+        ? request.auth.token.socioId
+        : get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.socioId;
+    }
+
+    function ownUserByUid(userId) {
       return signedIn() && request.auth.uid == userId;
     }
 
-    // Temporary compatibility for the current collection, whose documents
-    // were created with random IDs and are looked up by email by the app.
-    function isOwnUserByEmail() {
+    function ownUserByEmail() {
       return signedIn() && resource.data.email == request.auth.token.email;
     }
 
+    // Authentication profile. Existing random document IDs remain compatible
+    // through the email query; migrating to usuarios/{uid} is recommended.
     match /usuarios/{userId} {
-      allow get: if isAdmin() || isOwnUserByUid(userId) || isOwnUserByEmail();
-      allow list: if isAdmin() || isOwnUserByEmail();
+      allow get: if isAdmin() || ownUserByUid(userId) || ownUserByEmail();
+      allow list: if isAdmin() || ownUserByEmail();
       allow create, update, delete: if isAdmin();
     }
 
-    // Existing production rule preserved verbatim. It currently grants the
-    // same temporary access to every collection until its published expiry.
+    // Collections containing socioId. A SOCIO must query these collections with
+    // where("socioId", "==", request.auth.token.socioId) to satisfy rules.
+    match /clientes/{id} {
+      allow read: if isAdmin() || ownSocioDocument();
+      allow create: if isAdmin() || ownSocioCreate();
+      allow update, delete: if isAdmin() || ownSocioDocument();
+    }
+
+    match /estoque/{id} {
+      allow read: if isAdmin() || ownSocioDocument();
+      allow create: if isAdmin() || ownSocioCreate();
+      allow update, delete: if isAdmin() || ownSocioDocument();
+    }
+
+    match /vendas/{id} {
+      allow read: if isAdmin() || ownSocioDocument();
+      allow create: if isAdmin() || ownSocioCreate();
+      allow update, delete: if isAdmin() || ownSocioDocument();
+    }
+
+    match /parcelas/{id} {
+      allow read: if isAdmin() || ownSocioDocument();
+      allow create: if isAdmin() || ownSocioCreate();
+      allow update, delete: if isAdmin() || ownSocioDocument();
+    }
+
+    match /repasses/{id} {
+      allow read: if isAdmin() || ownSocioDocument();
+      allow create: if isAdmin() || ownSocioCreate();
+      allow update, delete: if isAdmin() || ownSocioDocument();
+    }
+
+    match /contratos/{id} {
+      allow read: if isAdmin() || ownSocioDocument();
+      allow create: if isAdmin() || ownSocioCreate();
+      allow update, delete: if isAdmin() || ownSocioDocument();
+    }
+
+    match /movimentacoes/{id} {
+      allow read: if isAdmin() || ownSocioDocument();
+      allow create: if isAdmin() || ownSocioCreate();
+      allow update, delete: if isAdmin() || ownSocioDocument();
+    }
+
+    // These collections currently have no reliable socioId field and therefore
+    // remain administrator-only until their data model is adapted.
+    match /socios/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /despesas/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /cobrancas/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /cobrancaLogs/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /configuracoes/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /configuracoesCobranca/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // Deny every collection not explicitly declared above.
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 8, 5);
+      allow read, write: if false;
     }
   }
 }

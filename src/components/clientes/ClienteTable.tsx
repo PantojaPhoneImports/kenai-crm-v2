@@ -19,7 +19,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { filtrarPorSocio } from "@/lib/socio";
+import { usuarioEhSocio } from "@/lib/socio";
 
 export default function ClienteTable() {
 
@@ -40,9 +40,9 @@ export default function ClienteTable() {
 
   async function carregarClientes() {
 
-    let dados = await listarClientes();
+    const dados = await listarClientes(usuarioEhSocio(usuario) ? usuario?.socioId : undefined);
 
-    setClientes(filtrarPorSocio(dados, usuario));
+    setClientes(dados);
 
   }
 

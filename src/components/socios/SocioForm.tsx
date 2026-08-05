@@ -29,6 +29,8 @@ export default function SocioForm({
   const [carregando, setCarregando] =
     useState(false);
 
+  const [firebaseAuthUid, setFirebaseAuthUid] = useState("");
+
   const [socio, setSocio] = useState<Socio>({
 
     nome: "",
@@ -113,6 +115,8 @@ dados.percentualLucro || 100
 
       });
 
+      setFirebaseAuthUid((dados as Socio & { firebaseAuthUid?: string }).firebaseAuthUid || "");
+
     }
 
     setCarregando(false);
@@ -147,6 +151,11 @@ dados.percentualLucro || 100
 
   async function salvar() {
 
+    if (!firebaseAuthUid.trim()) {
+      alert("Informe o UID do Firebase Auth antes de salvar o sócio.");
+      return;
+    }
+
     if (id) {
 
       await editarSocio(
@@ -154,7 +163,7 @@ dados.percentualLucro || 100
         socio
       );
 
-      await vincularUsuarioAoSocio(socio.email, id, socio.nome);
+      await vincularUsuarioAoSocio(socio.email, id, socio.nome, firebaseAuthUid);
 
       alert(
         "Sócio atualizado com sucesso!"
@@ -163,7 +172,7 @@ dados.percentualLucro || 100
     } else {
 
   const socioId = await criarSocio(socio);
-  await vincularUsuarioAoSocio(socio.email, socioId, socio.nome);
+  await vincularUsuarioAoSocio(socio.email, socioId, socio.nome, firebaseAuthUid);
 
   alert("Sócio cadastrado com sucesso!");
 
@@ -366,6 +375,19 @@ dados.percentualLucro || 100
             name="usuario"
             value={socio.usuario}
             onChange={handleChange}
+          />
+
+        </div>
+
+        <div>
+
+          <Label>UID do Firebase Auth</Label>
+
+          <Input
+            name="firebaseAuthUid"
+            value={firebaseAuthUid}
+            onChange={(e) => setFirebaseAuthUid(e.target.value)}
+            placeholder="UID da conta autenticável"
           />
 
         </div>

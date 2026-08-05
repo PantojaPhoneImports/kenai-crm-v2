@@ -13,6 +13,8 @@ export default function UsuariosPage() {
 
   const [email, setEmail] = useState("");
 
+  const [firebaseAuthUid, setFirebaseAuthUid] = useState("");
+
   const [cargo, setCargo] = useState("");
 
   const [perfil, setPerfil] = useState("Administrador");
@@ -21,9 +23,9 @@ export default function UsuariosPage() {
 
   async function salvar() {
 
-    if (!nome || !email) {
+    if (!nome || !email || !firebaseAuthUid.trim()) {
 
-      alert("Preencha Nome e Email.");
+      alert("Preencha Nome, Email e UID do Firebase Auth.");
 
       return;
 
@@ -41,7 +43,7 @@ export default function UsuariosPage() {
 
       ativo,
 
-    });
+    }, firebaseAuthUid);
 
     alert("Usuário cadastrado com sucesso.");
 
@@ -86,6 +88,13 @@ export default function UsuariosPage() {
               placeholder="Email"
               value={email}
               onChange={(e)=>setEmail(e.target.value)}
+              className="bg-zinc-950 border border-zinc-700 rounded-xl p-4 text-white"
+            />
+
+            <input
+              placeholder="UID do Firebase Auth"
+              value={firebaseAuthUid}
+              onChange={(e)=>setFirebaseAuthUid(e.target.value)}
               className="bg-zinc-950 border border-zinc-700 rounded-xl p-4 text-white"
             />
 

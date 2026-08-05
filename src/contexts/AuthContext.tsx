@@ -14,7 +14,7 @@ import {
 } from "firebase/auth";
 
 import { auth } from "@/lib/firebase";
-import { buscarUsuarioPorEmail } from "@/services/usuarios";
+import { buscarUsuarioPorUid } from "@/services/usuarios";
 import type { Usuario } from "@/types/usuario";
 
 interface AuthContextType {
@@ -74,13 +74,13 @@ export function AuthProvider({
         if (firebaseUser) {
 
           try {
-            console.info("[auth:context] buscando usuário de acesso", {
+            console.info("[auth:context] buscando usuário de acesso por UID", {
               email: firebaseUser.email || "",
               uid: firebaseUser.uid,
-              caminhoFirestore: "/databases/(default)/documents/usuarios",
-              consulta: 'where("email", "==", email)',
+              caminhoFirestore: `/databases/(default)/documents/usuarios/${firebaseUser.uid}`,
+              consulta: `doc(db, "usuarios", "${firebaseUser.uid}")`,
             });
-            const dadosUsuario = await buscarUsuarioPorEmail(firebaseUser.email || "", { uid: firebaseUser.uid });
+            const dadosUsuario = await buscarUsuarioPorUid(firebaseUser.uid);
 
             console.info("[auth:context] usuário entrando no contexto", {
               uid: firebaseUser.uid,

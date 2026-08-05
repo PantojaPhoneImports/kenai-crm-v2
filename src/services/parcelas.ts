@@ -8,6 +8,7 @@ import {
   query,
   orderBy,
   updateDoc,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -39,22 +40,18 @@ export async function criarParcela(
 }
 
 
-export async function listarParcelas(): Promise<Parcela[]> {
+export async function listarParcelas(socioId?: string): Promise<Parcela[]> {
 
-  const q = query(
-    parcelasRef,
-    orderBy(
-      "vencimento",
-      "asc"
-    )
-  );
+  const q = socioId
+    ? query(parcelasRef, where("socioId", "==", socioId))
+    : query(parcelasRef, orderBy("vencimento", "asc"));
 
 
   const snapshot =
     await getDocs(q);
 
 
-  return snapshot.docs.map(
+  const parcelas = snapshot.docs.map(
     (docItem) => ({
 
       id: docItem.id,
@@ -63,6 +60,10 @@ export async function listarParcelas(): Promise<Parcela[]> {
 
     })
   );
+
+  return socioId
+    ? parcelas.sort((a: any, b: any) => Number(a.vencimento?.seconds || new Date(a.vencimento).getTime()) - Number(b.vencimento?.seconds || new Date(b.vencimento).getTime()))
+    : parcelas;
 
 }
 

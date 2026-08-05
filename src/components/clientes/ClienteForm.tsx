@@ -19,8 +19,8 @@ export default function ClienteForm() {
   const { usuario } = useAuth();
 const [socios, setSocios] = useState<any[]>([]);
 useEffect(() => {
-  carregarSocios();
-}, []);
+  if (!usuarioEhSocio(usuario)) carregarSocios();
+}, [usuario]);
 
 async function carregarSocios() {
   const dados = await listarSocios();

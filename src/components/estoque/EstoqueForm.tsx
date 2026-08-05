@@ -63,8 +63,8 @@ tipoSocio: "PARCEIRO",
 
 
   useEffect(() => {
-    carregarSocios();
-  }, []);
+    if (!usuarioEhSocio(usuario)) carregarSocios();
+  }, [usuario]);
 
   useEffect(() => {
     const socioIdUsuario = usuario?.socioId;
