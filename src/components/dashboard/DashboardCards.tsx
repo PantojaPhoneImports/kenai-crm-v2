@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
@@ -38,14 +38,29 @@ export default function DashboardCards() {
 
   const [quantidadeClientes, setQuantidadeClientes] = useState(0);
   const [estoquePorSocio, setEstoquePorSocio] = useState({ diogo: 0, antonio: 0 });
+  const [erro, setErro] = useState<string | null>(null);
+
+  const carregar = useCallback(async () => {
+    if (!usuario) return;
+    setErro(null);
+    try {
+      const dashboard = await carregarDashboard(usuario);
+      setDados(dashboard);
+    } catch (error) {
+      const detalhe = error as { code?: string; message?: string; stack?: string };
+      console.error("[dashboard] DashboardCards não recebeu dados", {
+        code: detalhe.code,
+        message: detalhe.message,
+        stack: detalhe.stack,
+        error,
+      });
+      setErro(detalhe.message || "Erro interno ao consultar os dados do Dashboard.");
+    }
+  }, [usuario]);
 
   useEffect(() => {
-
-    if (usuario) {
-      carregar();
-    }
-
-  }, [usuario]);
+    void carregar();
+  }, [carregar]);
 
   useEffect(() => {
     if (!usuario) return;
@@ -54,6 +69,8 @@ export default function DashboardCards() {
       return;
     }
 
+    const inicio = performance.now();
+    console.info("[dashboard] início da assinatura", { colecao: "estoque" });
     return onSnapshot(collection(db, "estoque"), (snapshot) => {
       // Mantém exatamente o mesmo critério da tela Estoque: todos os produtos
       // visíveis ao usuário autenticado, sem restringir pelo status do aparelho.
@@ -70,7 +87,11 @@ export default function DashboardCards() {
           String(produto.socioNome || "").toLowerCase().includes("antonio")
         ).length,
       });
-    }, (error) => console.error("Erro ao atualizar estoque por sócio:", error));
+      console.info("[dashboard] resultado da assinatura", { colecao: "estoque", documentos: snapshot.size, tempoMs: Math.round(performance.now() - inicio) });
+    }, (error) => {
+      const detalhe = error as { code?: string; message?: string; stack?: string };
+      console.error("[dashboard] erro na assinatura", { colecao: "estoque", tempoMs: Math.round(performance.now() - inicio), code: detalhe.code, message: detalhe.message, stack: detalhe.stack, error });
+    });
   }, [usuario]);
 
   useEffect(() => {
@@ -79,6 +100,8 @@ export default function DashboardCards() {
       return;
     }
 
+    const inicio = performance.now();
+    console.info("[dashboard] início da assinatura", { colecao: "clientes" });
     const cancelarAssinatura = onSnapshot(
       collection(db, "clientes"),
       (snapshot) => {
@@ -88,24 +111,16 @@ export default function DashboardCards() {
         }));
 
         setQuantidadeClientes(filtrarPorSocio(clientes, usuario).length);
+        console.info("[dashboard] resultado da assinatura", { colecao: "clientes", documentos: snapshot.size, tempoMs: Math.round(performance.now() - inicio) });
       },
       (error) => {
-        console.error("Erro ao atualizar a quantidade de clientes no Dashboard:", error);
+        const detalhe = error as { code?: string; message?: string; stack?: string };
+        console.error("[dashboard] erro na assinatura", { colecao: "clientes", tempoMs: Math.round(performance.now() - inicio), code: detalhe.code, message: detalhe.message, stack: detalhe.stack, error });
       }
     );
 
     return cancelarAssinatura;
   }, [usuario]);
-
-  async function carregar() {
-
-    if (!usuario) return;
-
-    const dashboard = await carregarDashboard(usuario);
-
-    setDados(dashboard);
-
-  }
 
   const cards = usuarioEhSocio(usuario) ? [
     { titulo: "Meu estoque", valor: dados.estoque.toString(), icone: Smartphone },
@@ -175,8 +190,9 @@ export default function DashboardCards() {
   ];
 
   return (
-
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+    <>
+      {erro && <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">Erro ao carregar Dashboard: {erro}. Consulte o console para o diagnóstico completo.</div>}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
 
       {cards.map((card) => {
 
@@ -220,7 +236,8 @@ export default function DashboardCards() {
 
       })}
 
-    </div>
+      </div>
+    </>
 
   );
 
