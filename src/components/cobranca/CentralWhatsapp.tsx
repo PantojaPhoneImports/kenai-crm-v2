@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { toast } from "sonner";
 import { AlertCircle, CheckCircle2, Clock3, Loader2, MessageCircle, Send, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,14 @@ export default function CentralWhatsapp() {
 
   async function enviar(p: any, silencioso = false): Promise<ResultadoEnvio> {
     if (ehSocio) return "ignorado";
-    const telefone = p.clienteTelefone || p.telefone || "";
+    const documentoCliente = p.clienteId ? await getDoc(doc(db, "clientes", p.clienteId)) : null;
+    const telefone = String(documentoCliente?.data()?.telefone || "");
+    console.info("[Cobrança WhatsApp] telefone resolvido", {
+      cliente: p.clienteNome,
+      documentoFirestore: p.clienteId || null,
+      telefoneSalvo: telefone || null,
+      telefoneParcela: p.clienteTelefone || p.telefone || null,
+    });
     if (!telefone) { console.warn("[Cobrança WhatsApp] envio ignorado: cliente sem telefone", { cliente: p.clienteNome, parcela: p.parcela }); if (!silencioso) toast.error("Cliente sem telefone."); return "ignorado"; }
 
     const inicio = performance.now();
@@ -79,7 +86,7 @@ export default function CentralWhatsapp() {
       console.info("[Cobrança WhatsApp] iniciando envio", { provider, telefone, cliente: p.clienteNome, parcela: p.parcela, mensagem, modo: modoProvider(provider) });
       const criada = await criarCobranca({ clienteId: p.clienteId, cliente: p.clienteNome || "", telefone, produto: p.produtoNome || "", parcela: Number(p.parcela), valor: Number(p.valor), vencimento: vencimento(p).toISOString(), tipoMensagem: tipo, status: "PENDENTE", criadoEm: new Date().toISOString(), provider, tentativas: 1, responsavel: usuario?.nome, mensagem });
       cobrancaId = criada.id;
-      const resultado = await whatsappProvider.send({ telefone, mensagem, provider });
+      const resultado = await whatsappProvider.send({ telefone, mensagem, provider, cliente: p.clienteNome, clienteId: p.clienteId });
       const dataEnvio = new Date().toISOString();
       await atualizarCobranca(cobrancaId, { status: resultado.status === "ENVIADA" ? "ENVIADA" : "PENDENTE", enviadoEm: dataEnvio });
       await registrarLog({ cobrancaId, data: dataEnvio, usuario: usuario?.nome || "", cliente: p.clienteNome || "", telefone, provider, mensagem, tipo, resultado: resultado.status });

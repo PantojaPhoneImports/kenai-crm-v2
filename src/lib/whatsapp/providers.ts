@@ -4,7 +4,7 @@ import type { ProviderWhatsapp } from "@/types/cobranca";
 
 export interface WhatsappProvider {
   id: ProviderWhatsapp;
-  send(input: { telefone: string; mensagem: string }): Promise<{ status: "ENVIADA" | "PENDENTE"; provider: ProviderWhatsapp; response?: unknown }>;
+  send(input: { telefone: string; mensagem: string; cliente?: string; clienteId?: string }): Promise<{ status: "ENVIADA" | "PENDENTE"; provider: ProviderWhatsapp; response?: unknown }>;
   validate(): Promise<boolean>;
   testConnection(): Promise<{ ok: boolean; message: string }>;
   status(): "ATIVO" | "CONFIGURAR";
@@ -18,8 +18,8 @@ class WaMeProvider implements WhatsappProvider {
 }
 class EvolutionProvider implements WhatsappProvider {
   id: ProviderWhatsapp = "EVOLUTION";
-  async send({ telefone, mensagem }: { telefone: string; mensagem: string }) {
-    const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", telefone, mensagem }) });
+  async send({ telefone, mensagem, cliente, clienteId }: { telefone: string; mensagem: string; cliente?: string; clienteId?: string }) {
+    const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", telefone, mensagem, cliente, clienteId }) });
     const dados = await resposta.json(); if (!resposta.ok) throw new Error(dados.error || "Falha ao enviar pela Evolution.");
     return { status: "ENVIADA" as const, provider: this.id, response: dados };
   }
@@ -35,4 +35,4 @@ class PlaceholderProvider implements WhatsappProvider {
   status() { return "CONFIGURAR" as const; }
 }
 const providers: Record<ProviderWhatsapp, WhatsappProvider> = { WAME: new WaMeProvider(), EVOLUTION: new EvolutionProvider(), META_CLOUD: new PlaceholderProvider("META_CLOUD"), Z_API: new PlaceholderProvider("Z_API"), ULTRAMSG: new PlaceholderProvider("ULTRAMSG") };
-export const whatsappProvider = { get: (id: ProviderWhatsapp = "WAME") => providers[id], send: (input: { telefone: string; mensagem: string; provider?: ProviderWhatsapp }) => providers[input.provider || "WAME"].send(input) };
+export const whatsappProvider = { get: (id: ProviderWhatsapp = "WAME") => providers[id], send: (input: { telefone: string; mensagem: string; cliente?: string; clienteId?: string; provider?: ProviderWhatsapp }) => providers[input.provider || "WAME"].send(input) };
