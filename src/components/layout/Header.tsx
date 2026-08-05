@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { menu } from "@/data/menu";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { filtrarMenuPorUsuario } from "@/lib/acesso";
 
 export default function Header() {
 
@@ -19,12 +20,7 @@ export default function Header() {
   const perfil = usuario?.perfil || "";
 
   const inicial = nome.charAt(0).toUpperCase();
-  const menuFiltrado = menu.filter((item) => {
-    if (!usuario) return true;
-    const perfilNormalizado = (usuario.perfil || "").toUpperCase();
-    if (perfilNormalizado === "ADMIN" || perfilNormalizado === "ADMINISTRADOR") return true;
-    return ["/dashboard", "/clientes", "/estoque", "/vendas", "/financeiro"].includes(item.href);
-  });
+  const menuFiltrado = filtrarMenuPorUsuario(menu, usuario);
 
   return (
 

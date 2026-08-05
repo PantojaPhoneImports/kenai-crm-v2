@@ -37,13 +37,15 @@ export function AuthProvider({
   children: React.ReactNode;
 }) {
 
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => auth.currentUser);
 
   const [usuario, setUsuario] = useState<Usuario | null>(null);
 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+
+    let ativo = true;
 
     console.info("[auth:persistence] diagnóstico de persistência web", {
       configuracaoNoCodigo: "getAuth(app); sem initializeAuth() e sem setPersistence()",
@@ -65,6 +67,10 @@ export function AuthProvider({
 
       async (firebaseUser) => {
 
+        if (!ativo) return;
+
+        setLoading(true);
+
         console.info("[auth:context] onAuthStateChanged disparado", {
           uid: firebaseUser?.uid ?? null,
           email: firebaseUser?.email ?? null,
@@ -72,6 +78,13 @@ export function AuthProvider({
         });
 
         if (firebaseUser) {
+
+          // Disponibiliza a sessão imediatamente e mantém a interface em
+          // carregamento até que o perfil de `usuarios/{uid}` esteja pronto.
+          // Isso evita que uma navegação logo após o login interprete o
+          // intervalo assíncrono da leitura Firestore como logout.
+          setUser(firebaseUser);
+          setUsuario(null);
 
           try {
             console.info("[auth:context] buscando usuário de acesso por UID", {
@@ -90,8 +103,7 @@ export function AuthProvider({
               socioId: dadosUsuario?.socioId ?? null,
               usuario: dadosUsuario,
             });
-            setUser(firebaseUser);
-            setUsuario(dadosUsuario);
+            if (ativo) setUsuario(dadosUsuario);
           } catch (error) {
             const firebaseError = error as { code?: string; message?: string };
             console.error("[auth:context] erro ao carregar usuário da coleção usuarios", {
@@ -102,7 +114,10 @@ export function AuthProvider({
               stack: error instanceof Error ? error.stack : undefined,
               error,
             });
-            throw error;
+            if (ativo) {
+              setUser(null);
+              setUsuario(null);
+            }
           }
         } else {
 
@@ -119,13 +134,16 @@ export function AuthProvider({
         console.info("[auth:context] finalizando carregamento do contexto", {
           uid: firebaseUser?.uid ?? null,
         });
-        setLoading(false);
+        if (ativo) setLoading(false);
 
       }
 
     );
 
-    return () => unsubscribe();
+    return () => {
+      ativo = false;
+      unsubscribe();
+    };
 
   }, []);
 

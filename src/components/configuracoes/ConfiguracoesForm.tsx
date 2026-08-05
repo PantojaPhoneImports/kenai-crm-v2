@@ -10,8 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ConfiguracoesForm() {
+
+  const { usuario, loading } = useAuth();
 
   const [config, setConfig] = useState({
 
@@ -28,8 +31,8 @@ export default function ConfiguracoesForm() {
   });
 
   useEffect(() => {
-    carregar();
-  }, []);
+    if (!loading && usuario?.perfil !== "SOCIO") carregar();
+  }, [loading, usuario]);
 
   async function carregar() {
 

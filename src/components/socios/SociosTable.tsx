@@ -12,6 +12,7 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 import {
   listarSocios,
@@ -21,12 +22,14 @@ import {
 
 export default function SociosTable() {
 
+  const { usuario, loading } = useAuth();
+
   const [socios, setSocios] = useState<Socio[]>([]);
   const [busca, setBusca] = useState("");
 
   useEffect(() => {
-    carregar();
-  }, []);
+    if (!loading && usuario?.perfil !== "SOCIO") carregar();
+  }, [loading, usuario]);
 
   async function carregar() {
 

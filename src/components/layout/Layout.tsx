@@ -1,5 +1,6 @@
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 interface Props {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ export default function Layout({
   children,
 }: Props) {
   return (
+    <ProtectedRoute>
     <div className="flex min-h-screen min-w-0 bg-zinc-950">
 
       <Sidebar />
@@ -24,5 +26,6 @@ export default function Layout({
       </div>
 
     </div>
+    </ProtectedRoute>
   );
 }

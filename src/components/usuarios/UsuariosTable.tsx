@@ -8,14 +8,17 @@ import {
 } from "@/services/usuarios";
 
 import { Trash2, Pencil } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function UsuariosTable() {
+
+  const { usuario, loading } = useAuth();
 
   const [usuarios, setUsuarios] = useState<any[]>([]);
 
   useEffect(() => {
-    carregar();
-  }, []);
+    if (!loading && usuario?.perfil !== "SOCIO") carregar();
+  }, [loading, usuario]);
 
   async function carregar() {
     const lista = await listarUsuarios();

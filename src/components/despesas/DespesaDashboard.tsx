@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 import {
 
@@ -28,15 +29,17 @@ import {
 
 export default function DespesaDashboard() {
 
+  const { usuario, loading } = useAuth();
+
   const [despesas, setDespesas] = useState<any[]>([]);
 
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
 
-    carregar();
+    if (!loading && usuario?.perfil !== "SOCIO") carregar();
 
-  }, []);
+  }, [loading, usuario]);
 
   async function carregar() {
 

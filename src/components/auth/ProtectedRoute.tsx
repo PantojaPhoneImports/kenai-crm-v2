@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "../../contexts/AuthContext";
+import { usuarioPodeAcessarRota } from "@/lib/acesso";
 
 export default function ProtectedRoute({
   children,
@@ -11,9 +12,10 @@ export default function ProtectedRoute({
   children: React.ReactNode;
 }) {
 
-  const { user, loading } = useAuth();
+  const { user, usuario, loading } = useAuth();
 
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
 
@@ -29,7 +31,11 @@ export default function ProtectedRoute({
 
     }
 
-  }, [loading, user, router]);
+    if (!loading && user && !usuarioPodeAcessarRota(usuario, pathname)) {
+      router.replace("/dashboard");
+    }
+
+  }, [loading, user, usuario, pathname, router]);
 
   if (loading) {
 
@@ -47,7 +53,7 @@ export default function ProtectedRoute({
 
   }
 
-  if (!user) return null;
+  if (!user || !usuarioPodeAcessarRota(usuario, pathname)) return null;
 
   return <>{children}</>;
 

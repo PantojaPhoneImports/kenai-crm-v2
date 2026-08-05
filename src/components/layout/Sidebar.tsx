@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 
 import { menu } from "@/data/menu";
 import { useAuth } from "../../contexts/AuthContext";
+import { filtrarMenuPorUsuario } from "@/lib/acesso";
 
 export default function Sidebar() {
 
@@ -13,40 +14,7 @@ export default function Sidebar() {
 
   const { usuario, logout } = useAuth();
 
-  const menuFiltrado = menu.filter((item) => {
-
-    if (!usuario) return true;
-
-    const perfil = (usuario.perfil || "").toUpperCase();
-
-    if (
-      perfil === "ADMIN" ||
-      perfil === "ADMINISTRADOR"
-    ) {
-
-      return true;
-
-    }
-
-    const permitido = [
-
-      "/dashboard",
-
-      "/clientes",
-
-      "/estoque",
-
-      "/vendas",
-
-      "/financeiro",
-
-      "/cobranca-whatsapp",
-
-    ];
-
-    return permitido.includes(item.href);
-
-  });
+  const menuFiltrado = filtrarMenuPorUsuario(menu, usuario);
 
   return (
 
