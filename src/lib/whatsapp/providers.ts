@@ -21,7 +21,7 @@ class EvolutionProvider implements WhatsappProvider {
   async send({ telefone, mensagem, cliente, clienteId }: { telefone: string; mensagem: string; cliente?: string; clienteId?: string }) {
     const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", telefone, mensagem, cliente, clienteId }) });
     const dados = await resposta.json(); if (!resposta.ok) throw new Error(dados.error || "Falha ao enviar pela Evolution.");
-    return { status: "ENVIADA" as const, provider: this.id, response: dados };
+    return { status: dados.status === "ENVIADA" ? "ENVIADA" as const : "PENDENTE" as const, provider: this.id, response: dados };
   }
   async validate() { const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "status" }) }); return resposta.ok; }
   async testConnection() { const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test" }) }); const dados = await resposta.json(); return { ok: resposta.ok, message: resposta.ok ? `Evolution: ${dados.status}.` : (dados.error || "Evolution indisponível.") }; }

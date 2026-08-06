@@ -101,9 +101,32 @@ async function conexao(obterQr = false) {
   return { instance: instancia, status: estado(dados), qrCode: codigoQr, criada: resultado.criada };
 }
 export async function GET() { try { return NextResponse.json(await conexao(true)); } catch (error) { return NextResponse.json(erroComDiagnostico(error), { status: 500 }); } }
+type EnvioEvolution = { telefone?: unknown; mensagem?: unknown; cliente?: unknown; clienteId?: unknown };
+async function enviarMensagem(body: EnvioEvolution) {
+  const telefoneSalvo = String(body.telefone || "");
+  const telefone = telefoneSalvo.replace(/\D/g, "");
+  const mensagem = String(body.mensagem || "").trim();
+  if (!telefone || !mensagem) return NextResponse.json({ error: "Telefone e mensagem são obrigatórios." }, { status: 400 });
+
+  const atual = await conexao(false);
+  if (atual.status !== "CONECTADO") return NextResponse.json({ error: "A instância Evolution não está conectada." }, { status: 409 });
+
+  const numero = telefone.startsWith("55") ? telefone : `55${telefone}`;
+  const endpoint = `/message/sendText/${encodeURIComponent(atual.instance)}`;
+  const payload = { number: numero, textMessage: { text: mensagem }, linkPreview: true };
+  console.info("[Evolution] envio", { cliente: body.cliente || null, documentoFirestore: body.clienteId || null, telefoneSalvo, telefoneNormalizado: telefone, telefoneEnviado: numero, endpoint, payload });
+  const enviada = await evolution(endpoint, { method: "POST", body: JSON.stringify(payload) });
+  console.info("[Evolution] resposta envio", { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: logBody(enviada.data) });
+  if (enviada.status >= 400) return NextResponse.json({ error: enviada.data?.message || "Evolution recusou o envio.", diagnostic: { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: logBody(enviada.data) } }, { status: enviada.status });
+
+  const statusEvolution = String(enviada.data?.status || "PENDING").toUpperCase();
+  const status = ["SENT", "DELIVERED", "READ"].includes(statusEvolution) ? "ENVIADA" : "PENDENTE";
+  return NextResponse.json({ status, provider: "EVOLUTION", evolution: { httpStatus: enviada.status, status: statusEvolution, endpoint: enviada.endpoint, response: logBody(enviada.data) } });
+}
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json(); console.info("[Evolution] ação CRM", { action: body.action });
+    if (body.action === "send") return enviarMensagem(body);
     if (["status", "connect", "test"].includes(body.action)) return NextResponse.json(await conexao(body.action === "connect"));
     if (body.action === "reconnect") { const { instancia } = configuracao(); await garantirInstancia(); const reinicio = await evolution(`/instance/restart/${encodeURIComponent(instancia)}`, { method: "POST" }); if (reinicio.status >= 400) throw new Error(reinicio.data?.message || "Não foi possível reiniciar a instância."); return NextResponse.json(await conexao(true)); }
     if (body.action === "send") { const telefoneSalvo = String(body.telefone || ""); const telefone = telefoneSalvo.replace(/\D/g, ""); const mensagem = String(body.mensagem || "").trim(); if (!telefone || !mensagem) return NextResponse.json({ error: "Telefone e mensagem são obrigatórios." }, { status: 400 }); const atual = await conexao(false); if (atual.status !== "CONECTADO") return NextResponse.json({ error: "A instância Evolution não está conectada." }, { status: 409 }); const numero = telefone.startsWith("55") ? telefone : `55${telefone}`; const endpoint = `/message/sendText/${encodeURIComponent(atual.instance)}`; const payload = { number: numero, text: mensagem, linkPreview: true }; console.info("[Evolution] envio", { cliente: body.cliente || null, documentoFirestore: body.clienteId || null, telefoneSalvo, telefoneNormalizado: telefone, telefoneEnviado: numero, endpoint, payload }); const enviada = await evolution(endpoint, { method: "POST", body: JSON.stringify(payload) }); console.info("[Evolution] resposta envio", { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: logBody(enviada.data) }); if (enviada.status >= 400) return NextResponse.json({ error: enviada.data?.message || "Evolution recusou o envio.", diagnostic: { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: logBody(enviada.data) } }, { status: enviada.status }); return NextResponse.json({ status: "ENVIADA", provider: "EVOLUTION" }); }
