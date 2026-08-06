@@ -118,7 +118,7 @@ async function enviarMensagem(body: EnvioEvolution) {
 
   const numero = telefone.startsWith("55") ? telefone : `55${telefone}`;
   const endpoint = `/message/sendText/${encodeURIComponent(atual.instance)}`;
-  const payload = { number: numero, textMessage: { text: mensagem }, linkPreview: true };
+  const payload = { number: numero, text: mensagem, linkPreview: true };
   console.info("[Evolution] envio", { cliente: body.cliente || null, documentoFirestore: body.clienteId || null, telefoneSalvo, telefoneNormalizado: telefone, telefoneEnviado: numero, endpoint, payload });
   const enviada = await evolution(endpoint, { method: "POST", body: JSON.stringify(payload) });
   console.info("[Evolution] resposta envio", { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: logBody(enviada.data) });
