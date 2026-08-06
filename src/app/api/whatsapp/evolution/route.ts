@@ -65,6 +65,30 @@ function mensagemEvolution(data: unknown) {
   const mensagem = resposta?.response?.message ?? resposta?.message ?? resposta?.error ?? data;
   return typeof mensagem === "string" ? mensagem : JSON.stringify(mensagem);
 }
+type StatusEntrega = "ENVIADA" | "PENDENTE" | "ERRO";
+function statusEntrega(valor: unknown): StatusEntrega {
+  const status = String(valor || "PENDING").toUpperCase();
+  if (["SENT", "DELIVERED", "READ", "SUCCESS"].includes(status)) return "ENVIADA";
+  if (["ERROR", "FAILED", "REVOKED"].includes(status)) return "ERRO";
+  return "PENDENTE";
+}
+function ultimoStatusDaMensagem(data: unknown) {
+  const resposta = data as { messages?: { records?: Array<{ MessageUpdate?: Array<{ status?: unknown }>; messageUpdate?: Array<{ status?: unknown }> }> }; records?: Array<{ MessageUpdate?: Array<{ status?: unknown }>; messageUpdate?: Array<{ status?: unknown }> }> };
+  const registros = resposta?.messages?.records || resposta?.records || [];
+  const atualizacoes = registros[0]?.MessageUpdate || registros[0]?.messageUpdate || [];
+  return atualizacoes.at(-1)?.status || null;
+}
+async function confirmarEntrega(instancia: string, messageId: string) {
+  let consulta: EvolutionResponse | null = null;
+  for (const espera of [0, 1_000, 2_000, 3_000]) {
+    if (espera) await new Promise(resolve => setTimeout(resolve, espera));
+    consulta = await evolution(`/chat/findMessages/${encodeURIComponent(instancia)}`, { method: "POST", body: JSON.stringify({ where: { key: { id: messageId } } }) });
+    if (consulta.status >= 400) break;
+    const status = ultimoStatusDaMensagem(consulta.data);
+    if (status) return { status: statusEntrega(status), statusEvolution: String(status).toUpperCase(), response: consulta.data };
+  }
+  return { status: "PENDENTE" as const, statusEvolution: "PENDING", response: consulta?.data || null };
+}
 function instanciaDaLista(data: any, nome: string) {
   const lista = Array.isArray(data) ? data : (Array.isArray(data?.instances) ? data.instances : []);
   return lista.find((item: any) => (item?.instance?.instanceName || item?.instanceName || item?.name) === nome) || null;
@@ -125,9 +149,10 @@ async function enviarMensagem(body: EnvioEvolution) {
   console.info("[Evolution] resposta envio JSON", JSON.stringify({ endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: enviada.data }));
   if (enviada.status >= 400) return NextResponse.json({ error: mensagemEvolution(enviada.data), evolution: enviada.data, diagnostic: { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: enviada.data } }, { status: enviada.status });
 
-  const statusEvolution = String(enviada.data?.status || "PENDING").toUpperCase();
-  const status = ["SENT", "DELIVERED", "READ"].includes(statusEvolution) ? "ENVIADA" : "PENDENTE";
-  return NextResponse.json({ status, provider: "EVOLUTION", evolution: { httpStatus: enviada.status, status: statusEvolution, endpoint: enviada.endpoint, response: logBody(enviada.data) } });
+  const messageId = enviada.data?.key?.id;
+  const confirmacao = messageId ? await confirmarEntrega(atual.instance, messageId) : { status: statusEntrega(enviada.data?.status), statusEvolution: String(enviada.data?.status || "PENDING").toUpperCase(), response: null };
+  console.info("[Evolution] confirmação de entrega", JSON.stringify({ messageId: messageId || null, ...confirmacao }));
+  return NextResponse.json({ status: confirmacao.status, provider: "EVOLUTION", evolution: { httpStatus: enviada.status, status: confirmacao.statusEvolution, endpoint: enviada.endpoint, messageId: messageId || null, response: logBody(enviada.data), delivery: logBody(confirmacao.response) } });
 }
 export async function POST(request: NextRequest) {
   try {
@@ -135,7 +160,6 @@ export async function POST(request: NextRequest) {
     if (body.action === "send") return enviarMensagem(body);
     if (["status", "connect", "test"].includes(body.action)) return NextResponse.json(await conexao(body.action === "connect"));
     if (body.action === "reconnect") { const { instancia } = configuracao(); await garantirInstancia(); const reinicio = await evolution(`/instance/restart/${encodeURIComponent(instancia)}`, { method: "POST" }); if (reinicio.status >= 400) throw new Error(reinicio.data?.message || "Não foi possível reiniciar a instância."); return NextResponse.json(await conexao(true)); }
-    if (body.action === "send") { const telefoneSalvo = String(body.telefone || ""); const telefone = telefoneSalvo.replace(/\D/g, ""); const mensagem = String(body.mensagem || "").trim(); if (!telefone || !mensagem) return NextResponse.json({ error: "Telefone e mensagem são obrigatórios." }, { status: 400 }); const atual = await conexao(false); if (atual.status !== "CONECTADO") return NextResponse.json({ error: "A instância Evolution não está conectada." }, { status: 409 }); const numero = telefone.startsWith("55") ? telefone : `55${telefone}`; const endpoint = `/message/sendText/${encodeURIComponent(atual.instance)}`; const payload = { number: numero, text: mensagem, linkPreview: true }; console.info("[Evolution] envio", { cliente: body.cliente || null, documentoFirestore: body.clienteId || null, telefoneSalvo, telefoneNormalizado: telefone, telefoneEnviado: numero, endpoint, payload }); const enviada = await evolution(endpoint, { method: "POST", body: JSON.stringify(payload) }); console.info("[Evolution] resposta envio", { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: logBody(enviada.data) }); if (enviada.status >= 400) return NextResponse.json({ error: enviada.data?.message || "Evolution recusou o envio.", diagnostic: { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: logBody(enviada.data) } }, { status: enviada.status }); return NextResponse.json({ status: "ENVIADA", provider: "EVOLUTION" }); }
     return NextResponse.json({ error: "Ação inválida." }, { status: 400 });
   } catch (error) { return NextResponse.json(erroComDiagnostico(error), { status: 500 }); }
 }

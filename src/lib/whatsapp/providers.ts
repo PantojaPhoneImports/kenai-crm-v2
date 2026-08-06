@@ -4,7 +4,7 @@ import type { ProviderWhatsapp } from "@/types/cobranca";
 
 export interface WhatsappProvider {
   id: ProviderWhatsapp;
-  send(input: { telefone: string; mensagem: string; cliente?: string; clienteId?: string }): Promise<{ status: "ENVIADA" | "PENDENTE"; provider: ProviderWhatsapp; response?: unknown }>;
+  send(input: { telefone: string; mensagem: string; cliente?: string; clienteId?: string }): Promise<{ status: "ENVIADA" | "PENDENTE" | "ERRO"; provider: ProviderWhatsapp; response?: unknown }>;
   validate(): Promise<boolean>;
   testConnection(): Promise<{ ok: boolean; message: string }>;
   status(): "ATIVO" | "CONFIGURAR";
@@ -21,7 +21,8 @@ class EvolutionProvider implements WhatsappProvider {
   async send({ telefone, mensagem, cliente, clienteId }: { telefone: string; mensagem: string; cliente?: string; clienteId?: string }) {
     const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", telefone, mensagem, cliente, clienteId }) });
     const dados = await resposta.json(); if (!resposta.ok) { const mensagemEvolution = dados.evolution?.response?.message ?? dados.evolution?.message ?? dados.error ?? dados; throw new Error(typeof mensagemEvolution === "string" ? mensagemEvolution : JSON.stringify(mensagemEvolution)); }
-    return { status: dados.status === "ENVIADA" ? "ENVIADA" as const : "PENDENTE" as const, provider: this.id, response: dados };
+    const status = dados.status === "ENVIADA" || dados.status === "ERRO" ? dados.status : "PENDENTE";
+    return { status: status as "ENVIADA" | "PENDENTE" | "ERRO", provider: this.id, response: dados };
   }
   async validate() { const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "status" }) }); return resposta.ok; }
   async testConnection() { const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test" }) }); const dados = await resposta.json(); return { ok: resposta.ok, message: resposta.ok ? `Evolution: ${dados.status}.` : (dados.error || "Evolution indisponível.") }; }
@@ -29,7 +30,7 @@ class EvolutionProvider implements WhatsappProvider {
 }
 class PlaceholderProvider implements WhatsappProvider {
   constructor(public id: ProviderWhatsapp) {}
-  async send(_input: { telefone: string; mensagem: string }): Promise<{ status: "ENVIADA" | "PENDENTE"; provider: ProviderWhatsapp }> { throw new Error(`${this.id} ainda não está configurado.`); }
+  async send(_input: { telefone: string; mensagem: string }): Promise<{ status: "ENVIADA" | "PENDENTE" | "ERRO"; provider: ProviderWhatsapp }> { throw new Error(`${this.id} ainda não está configurado.`); }
   async validate() { return false; }
   async testConnection() { return { ok: false, message: `${this.id} ainda não configurado.` }; }
   status() { return "CONFIGURAR" as const; }

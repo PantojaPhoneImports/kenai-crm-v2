@@ -15,7 +15,7 @@ import type { ProviderWhatsapp } from "@/types/cobranca";
 
 type Filtro = "TODOS" | "HOJE" | "AMANHA" | "ATRASO" | "ENVIADOS" | "PENDENTES";
 type LogCobranca = { cliente?: string; telefone?: string; data?: string; tipo?: string; resultado?: string; provider?: string; mensagem?: string; erro?: string };
-type ResultadoEnvio = "enviado" | "ignorado" | "erro";
+type ResultadoEnvio = "enviado" | "pendente" | "ignorado" | "erro";
 type Progresso = { atual: number; total: number; enviados: number; ignorados: number; erros: number };
 
 const modelos: Record<string, string> = {
@@ -120,11 +120,23 @@ export default function CentralWhatsapp() {
       cobrancaId = criada.id;
       const resultado = await whatsappProvider.send({ telefone, mensagem, provider, cliente: p.clienteNome, clienteId: p.clienteId });
       const dataEnvio = new Date().toISOString();
-      await atualizarCobranca(cobrancaId, { status: resultado.status === "ENVIADA" ? "ENVIADA" : "PENDENTE", enviadoEm: dataEnvio });
+      await atualizarCobranca(cobrancaId, { status: resultado.status, enviadoEm: dataEnvio });
       await registrarLog({ cobrancaId, data: dataEnvio, usuario: usuario?.nome || "", cliente: p.clienteNome || "", telefone, provider, mensagem, tipo, resultado: resultado.status });
       console.info("[Cobrança WhatsApp] envio concluído", { provider, telefone, cliente: p.clienteNome, parcela: p.parcela, mensagem, tempoMs: Math.round(performance.now() - inicio), respostaApi: resultado.response });
+      if (resultado.status === "ERRO") {
+        const texto = "Evolution confirmou falha na entrega.";
+        setAviso(texto);
+        if (!silencioso) toast.error(texto);
+        return "erro";
+      }
+      if (resultado.status === "PENDENTE") {
+        const texto = provider === "WAME" ? "WhatsApp aberto." : "Mensagem aceita; aguardando confirmação de entrega.";
+        setAviso(texto);
+        if (!silencioso) toast.info(texto);
+        return "pendente";
+      }
       marcarEnviado(p.id);
-      const texto = provider === "WAME" ? "WhatsApp aberto." : "Mensagem enviada.";
+      const texto = provider === "WAME" ? "WhatsApp aberto." : "Mensagem entregue pela Evolution.";
       setAviso(texto);
       if (!silencioso) toast.success(texto);
       return "enviado";
@@ -142,7 +154,7 @@ export default function CentralWhatsapp() {
     if (ehSocio || !confirm(`Enviar ${lista.length} cobrança(s)?`)) return;
     let enviados = 0; let ignorados = 0; let erros = 0;
     setProgresso({ atual: 0, total: lista.length, enviados, ignorados, erros });
-    for (let indice = 0; indice < lista.length; indice += 1) { const resultado = await enviar(lista[indice], true); if (resultado === "enviado") enviados += 1; else if (resultado === "ignorado") ignorados += 1; else erros += 1; setProgresso({ atual: indice + 1, total: lista.length, enviados, ignorados, erros }); }
+    for (let indice = 0; indice < lista.length; indice += 1) { const resultado = await enviar(lista[indice], true); if (resultado === "enviado") enviados += 1; else if (resultado === "ignorado" || resultado === "pendente") ignorados += 1; else erros += 1; setProgresso({ atual: indice + 1, total: lista.length, enviados, ignorados, erros }); }
     const resumoFinal = `${enviados} enviados • ${ignorados} ignorados • ${erros} erros`;
     setAviso(resumoFinal);
     toast.success(resumoFinal);
@@ -159,6 +171,6 @@ export default function CentralWhatsapp() {
     {progresso && <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100"><div className="mb-2 flex justify-between"><span>Enviando {progresso.atual} de {progresso.total}...</span><span>{progresso.enviados} enviados · {progresso.ignorados} ignorados · {progresso.erros} erros</span></div><div className="h-2 overflow-hidden rounded-full bg-zinc-800"><div className="h-full bg-amber-400 transition-all" style={{ width: `${progresso.total ? (progresso.atual / progresso.total) * 100 : 0}%` }} /></div></div>}
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">{cards.map(({ titulo, valor, filtro: alvo, icone: Icon }) => <button onClick={() => setFiltro(alvo)} key={titulo} className={`rounded-xl border p-4 text-left ${filtro === alvo ? "border-amber-500 bg-amber-500/10" : "border-zinc-800 bg-zinc-900"}`}><Icon size={16} className="text-amber-300" /><p className="mt-2 text-xs text-zinc-400">{titulo}</p><p className="mt-1 text-2xl font-bold text-white">{valor}</p></button>)}</div>
     <div className="flex flex-col gap-3 sm:flex-row"><Input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente, telefone, produto, IMEI ou cor..." /><Button variant="outline" onClick={() => { setFiltro("TODOS"); setBusca(""); }}>Limpar filtros</Button>{!ehSocio && <Button onClick={enviarTodos} disabled={!lista.length || !!progresso}><Send size={16} /> Enviar para todos</Button>}</div>
-    <div className="overflow-x-auto rounded-2xl border border-zinc-800"><table className="w-full min-w-[900px] text-sm"><thead className="bg-zinc-900 text-zinc-400"><tr>{colunas.map(x => <th key={x} className="p-3 text-left">{x}</th>)}</tr></thead><tbody>{lista.length ? lista.map(p => { const historico = logDoCliente(p); const ultimo = historico[0]; const estaEnviando = enviando === p.id; const enviadoAgora = enviadosAgora.includes(p.id); return <tr key={p.id} className="border-t border-zinc-800 align-top"><td className="p-3 text-white"><p>{p.clienteNome}</p></td><td className="p-3">{p.clienteTelefone || p.telefone || "-"}</td><td className="p-3">{p.produtoNome || "-"}</td>{!ehSocio && <td className="p-3">{p.socioNome || "-"}</td>}<td className="p-3">{p.parcela}/{p.totalParcelas}</td><td className="p-3 text-green-400">{Number(p.valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td><td className="p-3">{vencimento(p).toLocaleDateString("pt-BR")}</td><td className="p-3">{ultimo?.data ? new Date(ultimo.data).toLocaleString("pt-BR") : "-"}</td><td className="p-3">{historico.length}</td>{ehSocio ? <td className="p-3">{ultimo?.resultado || "PENDENTE"}</td> : <><td className="p-3">{ultimo?.provider || "-"}</td><td className="p-3">{ultimo?.resultado || "PENDENTE"}</td><td className="p-3"><Button size="sm" onClick={() => enviar(p)} disabled={estaEnviando || !!progresso}>{estaEnviando ? <Loader2 className="animate-spin" size={16} /> : <MessageCircle size={16} />}{estaEnviando ? "Enviando..." : enviadoAgora ? "Enviado" : "Enviar"}</Button></td></>}</tr>; }) : <tr><td colSpan={colunas.length} className="p-12 text-center text-zinc-400">Nenhuma cobrança encontrada com estes filtros.</td></tr>}</tbody></table></div>
+    <div className="overflow-x-auto rounded-2xl border border-zinc-800"><table className="w-full min-w-[900px] text-sm"><thead className="bg-zinc-900 text-zinc-400"><tr>{colunas.map(x => <th key={x} className="p-3 text-left">{x}</th>)}</tr></thead><tbody>{lista.length ? lista.map(p => { const historico = logDoCliente(p); const ultimo = historico[0]; const estaEnviando = enviando === p.id; const enviadoAgora = enviadosAgora.includes(p.id); return <tr key={p.id} className="border-t border-zinc-800 align-top"><td className="p-3 text-white"><p>{p.clienteNome}</p></td><td className="p-3">{telefoneExibido(p) || "-"}</td><td className="p-3">{p.produtoNome || "-"}</td>{!ehSocio && <td className="p-3">{p.socioNome || "-"}</td>}<td className="p-3">{p.parcela}/{p.totalParcelas}</td><td className="p-3 text-green-400">{Number(p.valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td><td className="p-3">{vencimento(p).toLocaleDateString("pt-BR")}</td><td className="p-3">{ultimo?.data ? new Date(ultimo.data).toLocaleString("pt-BR") : "-"}</td><td className="p-3">{historico.length}</td>{ehSocio ? <td className="p-3">{ultimo?.resultado || "PENDENTE"}</td> : <><td className="p-3">{ultimo?.provider || "-"}</td><td className="p-3">{ultimo?.resultado || "PENDENTE"}</td><td className="p-3"><Button size="sm" onClick={() => enviar(p)} disabled={estaEnviando || !!progresso}>{estaEnviando ? <Loader2 className="animate-spin" size={16} /> : <MessageCircle size={16} />}{estaEnviando ? "Enviando..." : enviadoAgora ? "Enviado" : "Enviar"}</Button></td></>}</tr>; }) : <tr><td colSpan={colunas.length} className="p-12 text-center text-zinc-400">Nenhuma cobrança encontrada com estes filtros.</td></tr>}</tbody></table></div>
   </div>;
 }
