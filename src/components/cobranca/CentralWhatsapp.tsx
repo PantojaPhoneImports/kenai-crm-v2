@@ -78,8 +78,8 @@ export default function CentralWhatsapp() {
   const lista = useMemo(() => parcelas.filter(p => { const historico = logDoCliente(p); const passa = filtro === "TODOS" || (filtro === "PENDENTES" ? !historico.some(log => hoje(log.data)) : filtro === "ENVIADOS" ? historico.some(log => hoje(log.data) && log.resultado === "ENVIADA") : categoria(p) === filtro); return passa && [p.clienteNome, telefoneExibido(p), p.produtoNome, p.imei, p.cor, p.socioNome].filter(Boolean).join(" ").toLowerCase().includes(busca.toLowerCase()); }), [parcelas, logs, filtro, busca]);
 
   const marcarEnviado = (id: string) => { setEnviadosAgora(atual => [...new Set([...atual, id])]); window.setTimeout(() => setEnviadosAgora(atual => atual.filter(item => item !== id)), 3_000); };
-  const mensagemErro = (error: unknown) => error instanceof Error ? error.message : "Erro interno.";
-  const toastErro = (error: unknown) => { const mensagem = mensagemErro(error); if (/não está conectada|nao esta conectada/i.test(mensagem)) toast.error("Evolution desconectada."); else if (/ainda não está configurado|evolution não configurada/i.test(mensagem)) toast.error("Provider não configurado."); else toast.error("Erro interno."); };
+  const mensagemErro = (error: unknown) => error instanceof Error ? error.message : String(error || "Falha ao enviar.");
+  const toastErro = (error: unknown) => { const mensagem = mensagemErro(error); if (/não está conectada|nao esta conectada/i.test(mensagem)) toast.error("Evolution desconectada."); else if (/ainda não está configurado|evolution não configurada/i.test(mensagem)) toast.error("Provider não configurado."); else toast.error(mensagem); };
 
   async function enviar(p: any, silencioso = false): Promise<ResultadoEnvio> {
     if (ehSocio) return "ignorado";

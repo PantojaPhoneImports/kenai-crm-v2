@@ -60,6 +60,11 @@ function erroComDiagnostico(error: unknown) {
 function estado(data: any) { const value = data?.instance?.state || data?.instance?.status || data?.instance?.connectionStatus || data?.connectionStatus || data?.state || "close"; return ["open", "connected"].includes(String(value).toLowerCase()) ? "CONECTADO" : ["connecting", "qrcode"].includes(String(value).toLowerCase()) ? "CONECTANDO" : "DESCONECTADO"; }
 function qr(data: any) { return data?.qrcode?.base64 || data?.base64 || data?.qrcode || null; }
 function mensagemResposta(resposta: EvolutionResponse) { return typeof resposta.data?.message === "string" ? resposta.data.message : JSON.stringify(logBody(resposta.data)); }
+function mensagemEvolution(data: unknown) {
+  const resposta = data as { response?: { message?: unknown }; message?: unknown; error?: unknown };
+  const mensagem = resposta?.response?.message ?? resposta?.message ?? resposta?.error ?? data;
+  return typeof mensagem === "string" ? mensagem : JSON.stringify(mensagem);
+}
 function instanciaDaLista(data: any, nome: string) {
   const lista = Array.isArray(data) ? data : (Array.isArray(data?.instances) ? data.instances : []);
   return lista.find((item: any) => (item?.instance?.instanceName || item?.instanceName || item?.name) === nome) || null;
@@ -117,7 +122,8 @@ async function enviarMensagem(body: EnvioEvolution) {
   console.info("[Evolution] envio", { cliente: body.cliente || null, documentoFirestore: body.clienteId || null, telefoneSalvo, telefoneNormalizado: telefone, telefoneEnviado: numero, endpoint, payload });
   const enviada = await evolution(endpoint, { method: "POST", body: JSON.stringify(payload) });
   console.info("[Evolution] resposta envio", { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: logBody(enviada.data) });
-  if (enviada.status >= 400) return NextResponse.json({ error: enviada.data?.message || "Evolution recusou o envio.", diagnostic: { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: logBody(enviada.data) } }, { status: enviada.status });
+  console.info("[Evolution] resposta envio JSON", JSON.stringify({ endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: enviada.data }));
+  if (enviada.status >= 400) return NextResponse.json({ error: mensagemEvolution(enviada.data), evolution: enviada.data, diagnostic: { endpoint: enviada.endpoint, method: enviada.method, httpStatus: enviada.status, body: enviada.data } }, { status: enviada.status });
 
   const statusEvolution = String(enviada.data?.status || "PENDING").toUpperCase();
   const status = ["SENT", "DELIVERED", "READ"].includes(statusEvolution) ? "ENVIADA" : "PENDENTE";
