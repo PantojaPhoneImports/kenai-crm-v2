@@ -46,13 +46,36 @@ export default function CentralWhatsapp() {
   const [providerAtivo, setProviderAtivo] = useState<ProviderWhatsapp>("WAME");
   const [progresso, setProgresso] = useState<Progresso | null>(null);
 
-  useEffect(() => { if (!usuario) return; const consulta = ehSocio ? query(collection(db, "parcelas"), where("socioId", "==", usuario.socioId)) : query(collection(db, "parcelas"), orderBy("vencimento", "asc")); return onSnapshot(consulta, s => { setParcelas(s.docs.map(d => ({ id: d.id, ...d.data() })).filter((p: any) => p.status !== "PAGA")); setCarregando(false); }, () => setCarregando(false)); }, [usuario, ehSocio]);
+  useEffect(() => {
+    if (!usuario) return;
+    let ativo = true;
+    const consulta = ehSocio
+      ? query(collection(db, "parcelas"), where("socioId", "==", usuario.socioId))
+      : query(collection(db, "parcelas"), orderBy("vencimento", "asc"));
+    const cancelar = onSnapshot(consulta, async s => {
+      const parcelasAtivas = s.docs.map(d => ({ id: d.id, ...d.data() })).filter((p: any) => p.status !== "PAGA");
+      const parcelasComTelefone = await Promise.all(parcelasAtivas.map(async (p: any) => {
+        if (!p.clienteId) return { ...p, telefoneCliente: "", clienteTelefone: "", telefone: "" };
+        try {
+          const cliente = await getDoc(doc(db, "clientes", p.clienteId));
+          const telefoneCliente = String(cliente.data()?.telefone || "");
+          return { ...p, telefoneCliente, clienteTelefone: telefoneCliente, telefone: telefoneCliente };
+        } catch (error) {
+          console.error("[Cobranca WhatsApp] erro ao consultar telefone do cliente", { cliente: p.clienteNome, clienteId: p.clienteId, error });
+          return { ...p, telefoneCliente: "", clienteTelefone: "", telefone: "", erroTelefoneCliente: true };
+        }
+      }));
+      if (ativo) { setParcelas(parcelasComTelefone); setCarregando(false); }
+    }, () => { if (ativo) setCarregando(false); });
+    return () => { ativo = false; cancelar(); };
+  }, [usuario, ehSocio]);
   useEffect(() => { if (!usuario || ehSocio) { setLogs([]); return; } return onSnapshot(query(collection(db, "cobrancaLogs"), orderBy("data", "desc")), s => setLogs(s.docs.map(d => d.data() as LogCobranca)), () => setLogs([])); }, [usuario, ehSocio]);
   useEffect(() => { if (!usuario || ehSocio) return; obterConfiguracaoCobranca().then(config => setProviderAtivo(config?.providerAtivo || "WAME")).catch(error => console.error("[Cobrança WhatsApp] erro ao descobrir provider ativo", error)); }, [usuario, ehSocio]);
 
-  const logDoCliente = (p: any) => logs.filter(log => log.cliente === p.clienteNome || (!!p.clienteTelefone && log.telefone === p.clienteTelefone));
+  const telefoneExibido = (p: any) => p.telefoneCliente || p.clienteTelefone || p.telefone || "";
+  const logDoCliente = (p: any) => logs.filter(log => log.cliente === p.clienteNome || (!!telefoneExibido(p) && log.telefone === telefoneExibido(p)));
   const resumo = useMemo(() => { const enviados = logs.filter(log => hoje(log.data) && log.resultado === "ENVIADA"); const erros = logs.filter(log => hoje(log.data) && log.resultado === "ERRO"); const tentativas = enviados.length + erros.length; return { ATRASO: parcelas.filter(p => categoria(p) === "ATRASO"), HOJE: parcelas.filter(p => categoria(p) === "HOJE"), AMANHA: parcelas.filter(p => categoria(p) === "AMANHA"), ENVIADOS: enviados, ERROS: erros, PENDENTES: parcelas.filter(p => !logDoCliente(p).some(log => hoje(log.data))), TAXA: tentativas ? Math.round((enviados.length / tentativas) * 100) : 0 }; }, [parcelas, logs]);
-  const lista = useMemo(() => parcelas.filter(p => { const historico = logDoCliente(p); const passa = filtro === "TODOS" || (filtro === "PENDENTES" ? !historico.some(log => hoje(log.data)) : filtro === "ENVIADOS" ? historico.some(log => hoje(log.data) && log.resultado === "ENVIADA") : categoria(p) === filtro); return passa && [p.clienteNome, p.clienteTelefone, p.telefone, p.produtoNome, p.imei, p.cor, p.socioNome].filter(Boolean).join(" ").toLowerCase().includes(busca.toLowerCase()); }), [parcelas, logs, filtro, busca]);
+  const lista = useMemo(() => parcelas.filter(p => { const historico = logDoCliente(p); const passa = filtro === "TODOS" || (filtro === "PENDENTES" ? !historico.some(log => hoje(log.data)) : filtro === "ENVIADOS" ? historico.some(log => hoje(log.data) && log.resultado === "ENVIADA") : categoria(p) === filtro); return passa && [p.clienteNome, telefoneExibido(p), p.produtoNome, p.imei, p.cor, p.socioNome].filter(Boolean).join(" ").toLowerCase().includes(busca.toLowerCase()); }), [parcelas, logs, filtro, busca]);
 
   const marcarEnviado = (id: string) => { setEnviadosAgora(atual => [...new Set([...atual, id])]); window.setTimeout(() => setEnviadosAgora(atual => atual.filter(item => item !== id)), 3_000); };
   const mensagemErro = (error: unknown) => error instanceof Error ? error.message : "Erro interno.";
@@ -60,8 +83,17 @@ export default function CentralWhatsapp() {
 
   async function enviar(p: any, silencioso = false): Promise<ResultadoEnvio> {
     if (ehSocio) return "ignorado";
-    const documentoCliente = p.clienteId ? await getDoc(doc(db, "clientes", p.clienteId)) : null;
-    const telefone = String(documentoCliente?.data()?.telefone || "");
+    let documentoCliente;
+    let telefone = "";
+    try {
+      documentoCliente = p.clienteId ? await getDoc(doc(db, "clientes", p.clienteId)) : null;
+      telefone = String(documentoCliente?.data()?.telefone || "");
+    } catch (error) {
+      console.error("[Cobranca WhatsApp] erro ao consultar telefone para envio", { cliente: p.clienteNome, clienteId: p.clienteId, error });
+      setAviso("Nao foi possivel consultar o telefone do cliente.");
+      if (!silencioso) toast.error("Nao foi possivel consultar o telefone do cliente.");
+      return "erro";
+    }
     console.info("[Cobrança WhatsApp] telefone resolvido", {
       cliente: p.clienteNome,
       documentoFirestore: p.clienteId || null,
