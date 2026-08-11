@@ -6,6 +6,7 @@ import {
   getDocs,
   orderBy,
   query,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { db } from "../lib/firebase";
@@ -69,7 +70,7 @@ export async function uploadContrato(
 
         arquivo: base64,
 
-        criadoEm: new Date(),
+        criadoEm: serverTimestamp(),
 
       }
     );

@@ -5,6 +5,7 @@ import {
   query,
   where,
   orderBy,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -179,7 +180,7 @@ export async function registrarMovimentacao({
 
     valor,
 
-    createdAt: new Date(),
+    createdAt: serverTimestamp(),
 
   });
 

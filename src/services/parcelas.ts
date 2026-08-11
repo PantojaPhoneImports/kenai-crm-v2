@@ -9,6 +9,7 @@ import {
   orderBy,
   updateDoc,
   where,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -34,7 +35,7 @@ export async function criarParcela(
 
   await addDoc(
     parcelasRef,
-    parcela
+    { ...parcela, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }
   );
 
 }
@@ -120,7 +121,7 @@ export async function atualizarParcela(
 export async function receberParcela(
   id:string,
   formaPagamento:string,
-  dataPagamento:string,
+  _dataPagamento:string,
   observacao:string
 ){
 
@@ -149,7 +150,9 @@ export async function receberParcela(
 
       formaPagamento,
 
-      dataPagamento,
+      dataPagamento: serverTimestamp(),
+
+      updatedAt: serverTimestamp(),
 
       observacao,
 

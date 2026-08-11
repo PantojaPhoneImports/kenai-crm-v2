@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { receberParcela } from "@/services/parcelas";
 import { buscarProdutoPorId } from "@/services/estoque";
 import ReciboPagamento from "./ReciboPagamento";
+import { formatarData, formatarDataHora } from "@/lib/data";
 
 interface Props {
   parcela: any;
@@ -48,7 +49,7 @@ export default function ReceberParcela({
 
         formaPagamento,
 
-        new Date().toISOString(),
+        "",
 
         ""
 
@@ -80,6 +81,30 @@ export default function ReceberParcela({
       <h2 className="text-2xl font-bold text-white">
         Receber Parcela
       </h2>
+
+      <div>
+
+        <Label>Criada em</Label>
+
+        <p className="mt-2 text-white">{formatarDataHora(parcela.createdAt)}</p>
+
+      </div>
+
+      <div>
+
+        <Label>Vencimento</Label>
+
+        <p className="mt-2 text-white">{formatarData(parcela.vencimento)}</p>
+
+      </div>
+
+      {parcela.status === "PAGA" && <div>
+
+        <Label>Pagamento</Label>
+
+        <p className="mt-2 text-white">{formatarDataHora(parcela.dataPagamento)}</p>
+
+      </div>}
 
       <div>
 

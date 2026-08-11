@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usuarioEhSocio } from "@/lib/socio";
+import { formatarDataHora } from "@/lib/data";
 
 export default function ClienteTable() {
 
@@ -48,15 +49,25 @@ export default function ClienteTable() {
 
   async function apagar(id: string) {
 
+    if (usuarioEhSocio(usuario)) {
+      alert("A exclusão definitiva de clientes deve ser feita por um administrador, pois ela valida todo o histórico financeiro relacionado.");
+      return;
+    }
+
     const confirmar = confirm(
       "Deseja realmente excluir este cliente?"
     );
 
     if (!confirmar) return;
 
-    await excluirCliente(id);
-
-    carregarClientes();
+    try {
+      const resultado = await excluirCliente(id);
+      alert(`Cliente e dependências sem histórico financeiro removidos: ${resultado.vendas} venda(s), ${resultado.parcelas} parcela(s) e ${resultado.repasses} repasse(s).`);
+      carregarClientes();
+    } catch (erro) {
+      console.error("Erro ao excluir cliente com segurança:", erro);
+      alert(erro instanceof Error ? erro.message : "Não foi possível excluir o cliente com segurança.");
+    }
 
   }
 
@@ -132,6 +143,8 @@ export default function ClienteTable() {
 
               <th className="p-4 text-left">Profissão</th>
 
+              <th className="p-4 text-left">Cadastro</th>
+
               <th className="p-4 text-center">Ações</th>
 
             </tr>
@@ -145,7 +158,7 @@ export default function ClienteTable() {
               <tr>
 
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="py-12 text-center text-zinc-500"
                 >
 
@@ -182,6 +195,11 @@ export default function ClienteTable() {
                   <td data-label="Telefone" className="p-4">{cliente.telefone}</td>
 
                   <td data-label="Profissão" className="p-4">{cliente.profissao}</td>
+
+                  <td data-label="Cadastro" className="p-4 text-sm text-zinc-400">
+                    {formatarDataHora(cliente.createdAt)}
+                    {cliente.updatedAt && <span className="mt-1 block text-xs text-zinc-500">Atualizado: {formatarDataHora(cliente.updatedAt)}</span>}
+                  </td>
 
                   <td data-label="Ações" className="p-4">
 

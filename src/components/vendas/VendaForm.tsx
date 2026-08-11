@@ -269,8 +269,6 @@ percentualLucro:
       ...venda,
 entradaDestino:
   venda.entradaDestino as "SOCIO" | "EMPRESA",
-      data: new Date(),
-
       status: "ATIVA",
 
     });
@@ -474,9 +472,6 @@ const primeira = new Date(
         vencimento,
 
         status: "PENDENTE",
-
-        createdAt:
-          new Date(),
 
       });
 

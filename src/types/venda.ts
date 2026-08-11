@@ -51,5 +51,8 @@ export interface Venda {
     | "CANCELADA";
 
   data?: Date;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  dataVenda?: unknown;
 
 }

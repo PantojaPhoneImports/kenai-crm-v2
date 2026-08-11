@@ -6,6 +6,7 @@ import {
   getDocs,
   query,
   where,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -23,6 +24,9 @@ export async function criarVenda(venda: Partial<Omit<Venda, "id">>) {
     ...venda,
     produtoNome,
     status: venda.status ?? "ATIVA",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    dataVenda: serverTimestamp(),
   };
 
   console.info("[vendas] antes de gravar", vendaParaSalvar);

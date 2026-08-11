@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarVendas } from "@/services/vendas";
 import { usuarioEhSocio } from "@/lib/socio";
+import { formatarDataHora } from "@/lib/data";
 
 export default function VendasTable() {
   const { usuario } = useAuth();
@@ -39,6 +40,10 @@ export default function VendasTable() {
               Produto
             </th>
 
+            <th className="p-4 text-left text-zinc-300">Sócio</th>
+
+            <th className="p-4 text-center text-zinc-300">Data da venda</th>
+
             <th className="p-4 text-center text-zinc-300">
               Valor
             </th>
@@ -69,6 +74,12 @@ export default function VendasTable() {
 
               <td data-label="Produto" className="p-4 text-zinc-300">
                 {venda.produtoNome}
+              </td>
+
+              <td data-label="Sócio" className="p-4 text-zinc-300">{venda.socioNome || "Não informado"}</td>
+
+              <td data-label="Data da venda" className="p-4 text-center text-sm text-zinc-400">
+                {formatarDataHora(venda.dataVenda || venda.createdAt || venda.data)}
               </td>
 
               <td data-label="Valor" className="p-4 text-center text-green-400">

@@ -56,6 +56,22 @@ service cloud.firestore {
       return signedIn() && resource.data.email == request.auth.token.email;
     }
 
+    // The client is first marked EXCLUINDO by the cascading deletion flow.
+    // This closes the race window: after that mark no new sale, installment,
+    // contract or financial record can be attached before the cleanup batch.
+    function clienteAtivo(clienteId) {
+      return clienteId is string &&
+        exists(/databases/$(database)/documents/clientes/$(clienteId)) &&
+        (!get(/databases/$(database)/documents/clientes/$(clienteId)).data.keys().hasAny(['status']) ||
+          get(/databases/$(database)/documents/clientes/$(clienteId)).data.status == 'ATIVO');
+    }
+
+    function vendaDoClienteExiste(vendaId, clienteId) {
+      return vendaId is string && clienteId is string &&
+        exists(/databases/$(database)/documents/vendas/$(vendaId)) &&
+        get(/databases/$(database)/documents/vendas/$(vendaId)).data.clienteId == clienteId;
+    }
+
     // Authentication profile. Existing random document IDs remain compatible
     // through the email query; migrating to usuarios/{uid} is recommended.
     match /usuarios/{userId} {
@@ -69,7 +85,10 @@ service cloud.firestore {
     match /clientes/{id} {
       allow read: if isAdmin() || ownSocioDocument();
       allow create: if isAdmin() || ownSocioCreate();
-      allow update, delete: if isAdmin() || ownSocioDocument();
+      allow update: if isAdmin() || ownSocioDocument();
+      // A hard delete cascades through financial collections, including
+      // administrator-only cobrança records, and must therefore be admin-only.
+      allow delete: if isAdmin();
     }
 
     match /estoque/{id} {
@@ -80,31 +99,35 @@ service cloud.firestore {
 
     match /vendas/{id} {
       allow read: if isAdmin() || ownSocioDocument();
-      allow create: if isAdmin() || ownSocioCreate();
+      allow create: if (isAdmin() || ownSocioCreate()) && clienteAtivo(request.resource.data.clienteId);
       allow update, delete: if isAdmin() || ownSocioDocument();
     }
 
     match /parcelas/{id} {
       allow read: if isAdmin() || ownSocioDocument();
-      allow create: if isAdmin() || ownSocioCreate();
+      allow create: if (isAdmin() || ownSocioCreate()) &&
+        clienteAtivo(request.resource.data.clienteId) &&
+        vendaDoClienteExiste(request.resource.data.vendaId, request.resource.data.clienteId);
       allow update, delete: if isAdmin() || ownSocioDocument();
     }
 
     match /repasses/{id} {
       allow read: if isAdmin() || ownSocioDocument();
-      allow create: if isAdmin() || ownSocioCreate();
+      allow create: if (isAdmin() || ownSocioCreate()) &&
+        vendaDoClienteExiste(request.resource.data.idVenda, get(/databases/$(database)/documents/vendas/$(request.resource.data.idVenda)).data.clienteId);
       allow update, delete: if isAdmin() || ownSocioDocument();
     }
 
     match /contratos/{id} {
       allow read: if isAdmin() || ownSocioDocument();
-      allow create: if isAdmin() || ownSocioCreate();
+      allow create: if (isAdmin() || ownSocioCreate()) && clienteAtivo(request.resource.data.clienteId);
       allow update, delete: if isAdmin() || ownSocioDocument();
     }
 
     match /movimentacoes/{id} {
       allow read: if isAdmin() || ownSocioDocument();
-      allow create: if isAdmin() || ownSocioCreate();
+      allow create: if (isAdmin() || ownSocioCreate()) &&
+        (!request.resource.data.keys().hasAny(['clienteId']) || request.resource.data.clienteId == '' || clienteAtivo(request.resource.data.clienteId));
       allow update, delete: if isAdmin() || ownSocioDocument();
     }
 
@@ -119,7 +142,8 @@ service cloud.firestore {
     }
 
     match /cobrancas/{id} {
-      allow read, write: if isAdmin();
+      allow read, update, delete: if isAdmin();
+      allow create: if isAdmin() && clienteAtivo(request.resource.data.clienteId);
     }
 
     match /cobrancaLogs/{id} {

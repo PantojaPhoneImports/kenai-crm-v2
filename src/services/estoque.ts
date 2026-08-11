@@ -8,6 +8,7 @@ import {
   query,
   updateDoc,
   where,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -67,7 +68,7 @@ export async function buscarProdutoPorId(
 }
 
 export async function criarProduto(produto: Produto) {
-  await addDoc(estoqueRef, produto);
+  await addDoc(estoqueRef, { ...produto, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
 }
 
 export async function editarProduto(
@@ -76,7 +77,7 @@ export async function editarProduto(
 ) {
   await updateDoc(
     doc(db, "estoque", id),
-    produto
+    { ...produto, updatedAt: serverTimestamp() }
   );
 }
 

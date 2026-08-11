@@ -28,19 +28,27 @@ function moeda(valor: number) { return valor.toLocaleString("pt-BR", { style: "c
 export default function ParcelasTable() {
   const { usuario } = useAuth();
   const [parcelas, setParcelas] = useState<any[]>([]);
+  const [clienteIds, setClienteIds] = useState<Set<string>>(new Set());
   const [busca, setBusca] = useState("");
   const [filtroCobranca, setFiltroCobranca] = useState<FiltroCobranca>(null);
 
   useEffect(() => {
-    if (!usuario) { setParcelas([]); return; }
+    if (!usuario) { setParcelas([]); setClienteIds(new Set()); return; }
     const consulta = usuarioEhSocio(usuario)
       ? query(collection(db, "parcelas"), where("socioId", "==", usuario.socioId))
       : query(collection(db, "parcelas"), orderBy("vencimento", "asc"));
-    return onSnapshot(consulta, (snapshot) => {
+    const consultaClientes = usuarioEhSocio(usuario)
+      ? query(collection(db, "clientes"), where("socioId", "==", usuario.socioId))
+      : collection(db, "clientes");
+    const cancelarParcelas = onSnapshot(consulta, (snapshot) => {
       const dados = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
       dados.sort((a: any, b: any) => (a.clienteNome || "").localeCompare(b.clienteNome || "") || (a.produtoNome || "").localeCompare(b.produtoNome || "") || Number(a.parcela) - Number(b.parcela));
       setParcelas(dados);
     }, (erro) => console.error("Erro ao atualizar parcelas:", erro));
+    const cancelarClientes = onSnapshot(consultaClientes, (snapshot) => {
+      setClienteIds(new Set(snapshot.docs.map((item) => item.id)));
+    }, (erro) => console.error("Erro ao validar clientes das parcelas:", erro));
+    return () => { cancelarParcelas(); cancelarClientes(); };
   }, [usuario]);
 
   async function apagar(id: string) {
@@ -54,7 +62,11 @@ export default function ParcelasTable() {
     const cobrancas: Record<Exclude<FiltroCobranca, null>, Map<string, ClienteCobranca>> = { ATRASADO: new Map(), HOJE: new Map(), "3DIAS": new Map() };
     let valorPendente = 0;
 
-    parcelas.forEach((parcela) => {
+    const parcelasValidas = parcelas.filter((parcela) => clienteIds.has(String(parcela.clienteId)));
+    const parcelasOrfas = parcelas.length - parcelasValidas.length;
+    if (parcelasOrfas > 0) console.warn("[parcelas] registros ocultados por cliente inexistente", { parcelasOrfas });
+
+    parcelasValidas.forEach((parcela) => {
       const idCliente = String(parcela.clienteId || parcela.clienteNome || parcela.id);
       const grupo = mapa.get(idCliente) || { id: idCliente, cliente: parcela.clienteNome || "Cliente", telefone: parcela.clienteTelefone || parcela.telefone || "", parcelas: [] as any[] };
       grupo.parcelas.push(parcela); mapa.set(idCliente, grupo);
@@ -78,7 +90,7 @@ export default function ParcelasTable() {
         .filter(Boolean).join(" ").toLowerCase().includes(texto));
     });
     return { visiveis, ativos, quitados, atrasados, valorPendente, cobrancas: { atrasadas: [...cobrancas.ATRASADO.values()], hoje: [...cobrancas.HOJE.values()], tresDias: [...cobrancas["3DIAS"].values()] } };
-  }, [parcelas, busca, filtroCobranca]);
+  }, [parcelas, clienteIds, busca, filtroCobranca]);
 
   const resumo = [
     ["Clientes ativos", dados.ativos, Users, "text-cyan-400"],

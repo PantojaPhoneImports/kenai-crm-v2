@@ -12,6 +12,7 @@ import {
 
 import { Produto } from "@/types/produto";
 import { usuarioEhSocio } from "@/lib/socio";
+import { formatarDataHora } from "@/lib/data";
 
 export default function EstoqueTable() {
   const { usuario } = useAuth();
@@ -75,6 +76,8 @@ export default function EstoqueTable() {
             <th className="p-4 text-left text-zinc-300">Marca</th>
             <th className="p-4 text-left text-zinc-300">Modelo</th>
             <th className="p-4 text-left text-zinc-300">IMEI</th>
+            <th className="p-4 text-left text-zinc-300">Entrada</th>
+            <th className="p-4 text-left text-zinc-300">Custo</th>
             <th className="p-4 text-left text-zinc-300">Venda</th>
             <th className="p-4 text-left text-zinc-300">Responsável</th>
             <th className="p-4 text-center text-zinc-300">Status</th>
@@ -101,8 +104,12 @@ export default function EstoqueTable() {
               </td>
 
               <td data-label="IMEI" className="p-4 text-zinc-400">
-                {produto.imei}
+                {produto.imei || "Não informado"}
               </td>
+
+              <td data-label="Entrada" className="p-4 text-sm text-zinc-400">{formatarDataHora(produto.createdAt)}</td>
+
+              <td data-label="Custo" className="p-4 text-zinc-300">{Number(produto.custo || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
 
               <td data-label="Venda" className="p-4 text-green-400 font-semibold">
                 R$ {Number(produto.venda).toFixed(2)}

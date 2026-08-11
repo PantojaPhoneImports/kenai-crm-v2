@@ -12,8 +12,9 @@ export interface Parcela {
   valor: number;
   vencimento: Date;
   status: "PENDENTE" | "PAGA";
-  createdAt?: Date;
-  dataPagamento?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  dataPagamento?: unknown;
   formaPagamento?: string;
   observacao?: string;
   ultimaCobranca?: string;

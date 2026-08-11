@@ -45,4 +45,10 @@ export interface Cliente {
 
   socioNome?: string;
 
+  /** Clientes em exclusão ficam temporariamente bloqueados para novas vendas. */
+  status?: "ATIVO" | "EXCLUINDO" | "ARQUIVADO";
+
+  createdAt?: unknown;
+  updatedAt?: unknown;
+
 }

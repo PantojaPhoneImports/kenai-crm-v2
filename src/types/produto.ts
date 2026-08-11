@@ -40,4 +40,7 @@ export interface Produto {
 
   percentualEmpresa: number;
 
+  createdAt?: unknown;
+  updatedAt?: unknown;
+
 }

@@ -11,6 +11,7 @@ import {
   getDocs,
 
   updateDoc,
+  serverTimestamp,
 
 } from "firebase/firestore";
 
@@ -42,7 +43,7 @@ export async function criarDespesa(
 
     despesasRef,
 
-    despesa
+    { ...despesa, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }
 
   );
 
@@ -59,7 +60,7 @@ export async function editarDespesa(
 
     doc(db, "despesas", id),
 
-    despesa
+    { ...despesa, updatedAt: serverTimestamp() }
 
   );
 
