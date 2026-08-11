@@ -43,7 +43,7 @@ export default function ReceberParcela({
 
       setLoading(true);
 
-      await receberParcela(
+      const resultado = await receberParcela(
 
         parcela.id,
 
@@ -55,7 +55,7 @@ export default function ReceberParcela({
 
       );
 
-      alert("Parcela recebida com sucesso!");
+      alert(resultado?.jaEstavaPaga ? "Esta parcela já estava paga." : "Parcela recebida com sucesso!");
 
       router.refresh();
       setPaga(true);

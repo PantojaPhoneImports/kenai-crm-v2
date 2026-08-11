@@ -10,6 +10,7 @@ import {
   updateDoc,
   where,
   serverTimestamp,
+  runTransaction,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -124,46 +125,22 @@ export async function receberParcela(
   _dataPagamento:string,
   observacao:string
 ){
+  const referencia = doc(db, "parcelas", id);
+  const parcela = await runTransaction(db, async (transacao) => {
+    const snapshot = await transacao.get(referencia);
+    if (!snapshot.exists()) throw new Error("Parcela não encontrada.");
+    const atual = { id: snapshot.id, ...(snapshot.data() as any) };
+    if (atual.status === "PAGA") return null;
+    transacao.update(referencia, { status: "PAGA", formaPagamento, dataPagamento: serverTimestamp(), updatedAt: serverTimestamp(), observacao });
+    return atual;
+  });
 
-  const parcela =
-    await buscarParcela(id);
-
-
-  if(!parcela)
-    return;
-
-
-
-  // marca parcela como paga
-
-  await updateDoc(
-
-    doc(
-      db,
-      "parcelas",
-      id
-    ),
-
-    {
-
-      status:"PAGA",
-
-      formaPagamento,
-
-      dataPagamento: serverTimestamp(),
-
-      updatedAt: serverTimestamp(),
-
-      observacao,
-
-    }
-
-  );
+  // Clique duplo ou reenvio não pode gerar um segundo recebimento/repasse.
+  if (!parcela) return { jaEstavaPaga: true };
 
 
 
-  if(!parcela.vendaId)
-    return;
+  if(!parcela.vendaId) return { jaEstavaPaga: false };
 
 
 
@@ -173,8 +150,7 @@ export async function receberParcela(
     );
 
 
-  if(!repasse)
-    return;
+  if(!repasse) return { jaEstavaPaga: false };
 
   const venda = await buscarVendaPorId(parcela.vendaId);
 
@@ -199,7 +175,7 @@ export async function receberParcela(
     0
   );
 
-await atualizarRepasse(repasse.id, {
+  await atualizarRepasse(repasse.id, {
 
   socioRecebido: calculo.socioRecebido,
 
@@ -216,7 +192,9 @@ await atualizarRepasse(repasse.id, {
       ? "FINALIZADO"
       : "ATIVO",
 
-});
+  });
+
+  return { jaEstavaPaga: false };
 
 }
 export async function excluirParcela(
