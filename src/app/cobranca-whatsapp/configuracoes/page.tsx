@@ -1,32 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
+import { CheckCircle2, Loader2, Save } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import EvolutionConnection from "@/components/cobranca/EvolutionConnection";
 import AcessoRestritoCobranca from "@/components/cobranca/AcessoRestritoCobranca";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { obterConfiguracaoCobranca, salvarConfiguracaoCobranca } from "@/services/cobrancas";
-import { whatsappProvider } from "@/lib/whatsapp/providers";
-import type { ConfiguracaoCobranca, ProviderConfiguracao, ProviderWhatsapp } from "@/types/cobranca";
+import type { ConfiguracaoCobranca, ProviderWhatsapp } from "@/types/cobranca";
 import { useAuth } from "@/contexts/AuthContext";
 import { usuarioEhSocio } from "@/lib/socio";
 
-const providers: Array<{ id: ProviderWhatsapp; nome: string; descricao: string }> = [{ id: "WAME", nome: "WA.ME", descricao: "Abertura manual pelo WhatsApp Web." }, { id: "EVOLUTION", nome: "Evolution API", descricao: "Envio real pelo servidor, com chave protegida na Vercel." }, { id: "META_CLOUD", nome: "Meta Cloud", descricao: "Preparado para integração oficial." }, { id: "Z_API", nome: "Z-API", descricao: "Preparado para integração por API." }, { id: "ULTRAMSG", nome: "UltraMsg", descricao: "Preparado para integração por API." }];
-const vazio: ProviderConfiguracao = { url: "", token: "", instancia: "", numero: "" };
+const providers: Array<{ id: ProviderWhatsapp; nome: string; descricao: string }> = [
+  { id: "WAME", nome: "WA.ME", descricao: "Abertura manual pelo WhatsApp Web." },
+  { id: "EVOLUTION", nome: "Evolution API", descricao: "Provider atual; permanece ativo durante a preparação." },
+  { id: "META_CLOUD_API", nome: "Meta Cloud API", descricao: "Arquitetura oficial preparada, porém desativada." },
+  { id: "Z_API", nome: "Z-API", descricao: "Provider não configurado." },
+  { id: "ULTRAMSG", nome: "UltraMsg", descricao: "Provider não configurado." },
+];
 const padrao: ConfiguracaoCobranca = { providerAtivo: "WAME", horario: "08:00", empresa: "Pantoja Phone Imports", telefone: "", mensagemPadrao: "", assinatura: "", diasAntecedencia: [3, 1, 0], providers: {} };
+
+function semCredenciais(config: ConfiguracaoCobranca) { const { providers: _providers, ...publica } = config; return publica as ConfiguracaoCobranca; }
 
 export default function ConfiguracoesCobrancaPage() {
   const { usuario, loading: carregandoUsuario } = useAuth();
-  const [config, setConfig] = useState<ConfiguracaoCobranca>(padrao); const [carregando, setCarregando] = useState(true); const [salvando, setSalvando] = useState<ProviderWhatsapp | null>(null); const [aviso, setAviso] = useState("");
-  useEffect(() => { if (!usuario || usuarioEhSocio(usuario)) { setCarregando(false); return; } obterConfiguracaoCobranca().then(valor => { if (valor) setConfig({ ...padrao, ...valor, providers: valor.providers || {} }); }).finally(() => setCarregando(false)); }, [usuario]);
-  const detalhe = (id: ProviderWhatsapp) => config.providers?.[id] || vazio;
-  const atualizar = (id: ProviderWhatsapp, campo: keyof ProviderConfiguracao, valor: string) => setConfig(atual => ({ ...atual, providers: { ...atual.providers, [id]: { ...(atual.providers?.[id] || vazio), [campo]: valor } } }));
-  const salvar = async (id: ProviderWhatsapp, ativar = false) => { setSalvando(id); try { const proxima = { ...config, providerAtivo: ativar ? id : config.providerAtivo }; await salvarConfiguracaoCobranca(proxima); setConfig(proxima); setAviso(ativar ? `${providers.find(p => p.id === id)?.nome} está ativo.` : "Configuração salva."); } finally { setSalvando(null); } };
-  const testar = async (id: ProviderWhatsapp) => { setSalvando(id); try { const resultado = await whatsappProvider.get(id).testConnection(); setAviso(resultado.message); } finally { setSalvando(null); } };
-  if (carregandoUsuario) return <Layout><div className="h-64 animate-pulse rounded-2xl bg-zinc-900" /></Layout>;
+  const [config, setConfig] = useState<ConfiguracaoCobranca>(padrao);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState<ProviderWhatsapp | null>(null);
+  const [aviso, setAviso] = useState("");
+  useEffect(() => { if (!usuario || usuarioEhSocio(usuario)) { setCarregando(false); return; } obterConfiguracaoCobranca().then(valor => { if (valor) setConfig({ ...padrao, ...valor, providers: {} }); }).finally(() => setCarregando(false)); }, [usuario]);
+  async function ativar(id: ProviderWhatsapp) {
+    if (id !== "EVOLUTION" && id !== "WAME") { setAviso("Provider bloqueado até configuração e migração expressamente autorizadas."); return; }
+    setSalvando(id); try { const proxima = { ...config, providerAtivo: id }; await salvarConfiguracaoCobranca(semCredenciais(proxima)); setConfig(proxima); setAviso(`${providers.find(p => p.id === id)?.nome} está ativo.`); } finally { setSalvando(null); }
+  }
+  async function salvarGerais() { setSalvando(config.providerAtivo); try { await salvarConfiguracaoCobranca(semCredenciais(config)); setAviso("Parâmetros salvos."); } finally { setSalvando(null); } }
+  if (carregandoUsuario || carregando) return <Layout><div className="h-64 animate-pulse rounded-2xl bg-zinc-900" /></Layout>;
   if (usuarioEhSocio(usuario)) return <Layout><AcessoRestritoCobranca /></Layout>;
-  if (carregando) return <Layout><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-72 animate-pulse rounded-2xl bg-zinc-900" />)}</div></Layout>;
-  return <Layout><div className="space-y-6"><div><h1 className="text-3xl font-bold text-white">Configurações da Cobrança</h1><p className="mt-2 text-zinc-400">A Evolution usa variáveis seguras da Vercel; URL, token e instância não são gravados no Firestore.</p></div>{aviso && <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">{aviso}</div>}<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{providers.map(item => { const ativo = config.providerAtivo === item.id; const dados = detalhe(item.id); const ocupado = salvando === item.id; return <article key={item.id} className={`rounded-2xl border bg-zinc-900 p-5 ${ativo ? "border-amber-400/70" : "border-zinc-800"}`}><div className="mb-4 flex items-start justify-between gap-3"><div><h2 className="font-bold text-white">{item.nome}</h2><p className="mt-1 text-xs text-zinc-400">{item.descricao}</p></div><span className={`rounded-full px-2 py-1 text-xs ${ativo ? "bg-emerald-500/15 text-emerald-300" : "bg-zinc-800 text-zinc-400"}`}>{ativo ? "ATIVO" : "PRONTO"}</span></div>{item.id === "EVOLUTION" ? <EvolutionConnection /> : <><div className="space-y-2"><Input value={dados.url} onChange={e => atualizar(item.id, "url", e.target.value)} placeholder="URL" /><Input value={dados.token} onChange={e => atualizar(item.id, "token", e.target.value)} placeholder="Token" type="password" /><Input value={dados.instancia} onChange={e => atualizar(item.id, "instancia", e.target.value)} placeholder="Instância" /><Input value={dados.numero} onChange={e => atualizar(item.id, "numero", e.target.value)} placeholder="Número" /></div><div className="mt-4 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => testar(item.id)} disabled={ocupado}><PlugZap size={14} /> Testar conexão</Button><Button size="sm" variant="outline" onClick={() => salvar(item.id)} disabled={ocupado}><Save size={14} /> Salvar</Button></div></>}<Button className="mt-4" size="sm" onClick={() => salvar(item.id, true)} disabled={ocupado}>{ocupado ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle2 size={14} />} Ativar</Button></article>; })}</section><section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"><h2 className="font-semibold text-white">Parâmetros gerais</h2><div className="mt-4 grid gap-3 md:grid-cols-2"><Input value={config.horario} onChange={e => setConfig({ ...config, horario: e.target.value })} placeholder="Horário" /><Input value={config.empresa} onChange={e => setConfig({ ...config, empresa: e.target.value })} placeholder="Empresa" /><Input value={config.mensagemPadrao} onChange={e => setConfig({ ...config, mensagemPadrao: e.target.value })} placeholder="Mensagem padrão" /><Input value={config.assinatura} onChange={e => setConfig({ ...config, assinatura: e.target.value })} placeholder="Assinatura" /></div><Button className="mt-4" onClick={() => salvar(config.providerAtivo)}><Save size={16} /> Salvar parâmetros</Button></section></div></Layout>;
+  return <Layout><div className="space-y-6">
+    <div><h1 className="text-3xl font-bold text-white">Configurações da Cobrança</h1><p className="mt-2 text-zinc-400">Credenciais são exclusivamente server-side e nunca são digitadas ou armazenadas nesta tela.</p></div>
+    {aviso && <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">{aviso}</div>}
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{providers.map(item => { const ativo = config.providerAtivo === item.id; const bloqueado = !["EVOLUTION", "WAME"].includes(item.id); return <article key={item.id} className={`rounded-2xl border bg-zinc-900 p-5 ${ativo ? "border-emerald-400/70" : "border-zinc-800"}`}><div className="flex items-start justify-between gap-3"><div><h2 className="font-bold text-white">{item.nome}</h2><p className="mt-1 text-xs text-zinc-400">{item.descricao}</p></div><span className={`rounded-full px-2 py-1 text-xs ${ativo ? "bg-emerald-500/15 text-emerald-300" : bloqueado ? "bg-amber-500/15 text-amber-300" : "bg-zinc-800 text-zinc-400"}`}>{ativo ? "ATIVO" : bloqueado ? "DESATIVADO" : "DISPONÍVEL"}</span></div>{item.id === "EVOLUTION" && <div className="mt-4"><EvolutionConnection /></div>}{item.id === "META_CLOUD_API" && <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200">Aguardando aprovação do número e variáveis seguras na Vercel. Nenhum número será conectado nesta etapa.</div>}<Button className="mt-4" size="sm" onClick={() => ativar(item.id)} disabled={bloqueado || salvando === item.id}>{salvando === item.id ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle2 size={14} />} Ativar</Button></article>; })}</section>
+    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"><h2 className="font-semibold text-white">Parâmetros gerais</h2><div className="mt-4 grid gap-3 md:grid-cols-2"><Input value={config.horario} onChange={e => setConfig({ ...config, horario: e.target.value })} placeholder="Horário" /><Input value={config.empresa} onChange={e => setConfig({ ...config, empresa: e.target.value })} placeholder="Empresa" /><Input value={config.mensagemPadrao} onChange={e => setConfig({ ...config, mensagemPadrao: e.target.value })} placeholder="Mensagem padrão" /><Input value={config.assinatura} onChange={e => setConfig({ ...config, assinatura: e.target.value })} placeholder="Assinatura" /></div><Button className="mt-4" onClick={salvarGerais}><Save size={16} /> Salvar parâmetros</Button></section>
+  </div></Layout>;
 }

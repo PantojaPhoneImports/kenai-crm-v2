@@ -1,6 +1,13 @@
 "use client";
 
 import type { ProviderWhatsapp } from "@/types/cobranca";
+import { auth } from "@/lib/firebase";
+
+async function headersAutenticados() {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error("Sessão expirada. Entre novamente no CRM.");
+  return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+}
 
 export interface WhatsappProvider {
   id: ProviderWhatsapp;
@@ -19,13 +26,13 @@ class WaMeProvider implements WhatsappProvider {
 class EvolutionProvider implements WhatsappProvider {
   id: ProviderWhatsapp = "EVOLUTION";
   async send({ telefone, mensagem, cliente, clienteId }: { telefone: string; mensagem: string; cliente?: string; clienteId?: string }) {
-    const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", telefone, mensagem, cliente, clienteId }) });
+    const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: await headersAutenticados(), body: JSON.stringify({ action: "send", telefone, mensagem, cliente, clienteId }) });
     const dados = await resposta.json(); if (!resposta.ok) { const mensagemEvolution = dados.evolution?.response?.message ?? dados.evolution?.message ?? dados.error ?? dados; throw new Error(typeof mensagemEvolution === "string" ? mensagemEvolution : JSON.stringify(mensagemEvolution)); }
     const status = dados.status === "ENVIADA" || dados.status === "ERRO" ? dados.status : "PENDENTE";
     return { status: status as "ENVIADA" | "PENDENTE" | "ERRO", provider: this.id, response: dados };
   }
-  async validate() { const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "status" }) }); return resposta.ok; }
-  async testConnection() { const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test" }) }); const dados = await resposta.json(); return { ok: resposta.ok, message: resposta.ok ? `Evolution: ${dados.status}.` : (dados.error || "Evolution indisponível.") }; }
+  async validate() { const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: await headersAutenticados(), body: JSON.stringify({ action: "status" }) }); return resposta.ok; }
+  async testConnection() { const resposta = await fetch("/api/whatsapp/evolution", { method: "POST", headers: await headersAutenticados(), body: JSON.stringify({ action: "test" }) }); const dados = await resposta.json(); return { ok: resposta.ok, message: resposta.ok ? `Evolution: ${dados.status}.` : (dados.error || "Evolution indisponível.") }; }
   status() { return "ATIVO" as const; }
 }
 class PlaceholderProvider implements WhatsappProvider {
@@ -35,5 +42,5 @@ class PlaceholderProvider implements WhatsappProvider {
   async testConnection() { return { ok: false, message: `${this.id} ainda não configurado.` }; }
   status() { return "CONFIGURAR" as const; }
 }
-const providers: Record<ProviderWhatsapp, WhatsappProvider> = { WAME: new WaMeProvider(), EVOLUTION: new EvolutionProvider(), META_CLOUD: new PlaceholderProvider("META_CLOUD"), Z_API: new PlaceholderProvider("Z_API"), ULTRAMSG: new PlaceholderProvider("ULTRAMSG") };
+const providers: Record<ProviderWhatsapp, WhatsappProvider> = { WAME: new WaMeProvider(), EVOLUTION: new EvolutionProvider(), META_CLOUD_API: new PlaceholderProvider("META_CLOUD_API"), Z_API: new PlaceholderProvider("Z_API"), ULTRAMSG: new PlaceholderProvider("ULTRAMSG") };
 export const whatsappProvider = { get: (id: ProviderWhatsapp = "WAME") => providers[id], send: (input: { telefone: string; mensagem: string; cliente?: string; clienteId?: string; provider?: ProviderWhatsapp }) => providers[input.provider || "WAME"].send(input) };
