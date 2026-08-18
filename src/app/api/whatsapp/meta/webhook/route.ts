@@ -4,16 +4,31 @@ import { adminFirestore } from "@/lib/firebase-admin";
 import { crmStatusFromMeta, normalizedWhatsappNumber, validMetaSignature, validVerifyToken, type MetaDeliveryStatus } from "@/lib/whatsapp/meta-cloud";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 type Data = Record<string, unknown>;
 const object = (value: unknown): Data => value && typeof value === "object" ? value as Data : {};
 const array = (value: unknown): Data[] => Array.isArray(value) ? value.map(object) : [];
 
 export async function GET(request: NextRequest) {
+  const startedAt = performance.now();
   const mode = request.nextUrl.searchParams.get("hub.mode");
   const verifyToken = request.nextUrl.searchParams.get("hub.verify_token");
   const challenge = request.nextUrl.searchParams.get("hub.challenge");
+  const verified = mode === "subscribe" && verifyToken !== null && challenge !== null && validVerifyToken(verifyToken);
+  const status = verified ? 200 : 403;
 
-  if (mode === "subscribe" && verifyToken !== null && challenge !== null && validVerifyToken(verifyToken)) {
+  console.info("[meta-webhook-verification]", {
+    method: request.method,
+    hasMode: mode !== null,
+    modeIsSubscribe: mode === "subscribe",
+    hasVerifyToken: verifyToken !== null,
+    hasChallenge: challenge !== null,
+    status,
+    durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
+    userAgent: request.headers.get("user-agent") || "",
+  });
+
+  if (verified) {
     return new NextResponse(challenge, {
       status: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
