@@ -9,11 +9,18 @@ const object = (value: unknown): Data => value && typeof value === "object" ? va
 const array = (value: unknown): Data[] => Array.isArray(value) ? value.map(object) : [];
 
 export async function GET(request: NextRequest) {
-  const mode = request.nextUrl.searchParams.get("hub.mode") || "";
-  const token = request.nextUrl.searchParams.get("hub.verify_token") || "";
-  const challenge = request.nextUrl.searchParams.get("hub.challenge") || "";
-  if (mode === "subscribe" && validVerifyToken(token)) return new NextResponse(challenge, { status: 200 });
-  return NextResponse.json({ error: "Verificação recusada." }, { status: 403 });
+  const mode = request.nextUrl.searchParams.get("hub.mode");
+  const verifyToken = request.nextUrl.searchParams.get("hub.verify_token");
+  const challenge = request.nextUrl.searchParams.get("hub.challenge");
+
+  if (mode === "subscribe" && verifyToken !== null && challenge !== null && validVerifyToken(verifyToken)) {
+    return new NextResponse(challenge, {
+      status: 200,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
+  return new NextResponse(null, { status: 403 });
 }
 
 async function findClient(phone: string) {
