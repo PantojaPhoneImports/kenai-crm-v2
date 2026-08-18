@@ -13,13 +13,15 @@
 - `META_WHATSAPP_PHONE_NUMBER_ID`: origem dos envios.
 - `META_WHATSAPP_VERIFY_TOKEN`: challenge inicial do webhook; valor definido pela empresa.
 - `META_APP_SECRET`: valida `X-Hub-Signature-256` em cada evento.
-- `META_CLOUD_API_ENABLED`: deve permanecer ausente/`false` até autorização.
+- `META_CLOUD_API_ENABLED`: use `true` para liberar a ativação administrativa; ausente/`false` mantém o provider bloqueado.
 
 `META_WHATSAPP_BUSINESS_ACCOUNT_ID` não é necessário para receber webhook nem enviar por um Phone Number ID já conhecido. Poderá ser adicionado futuramente apenas para administrar templates/ativos do WABA.
 
 ## Webhook preparado
 
 `/api/whatsapp/meta/webhook` valida challenge e assinatura HMAC, registra somente mensagens ligadas a clientes e atualiza `sent`, `delivered`, `read` e `failed`. `sent` permanece pendente; HTTP 200 nunca é tratado como entrega.
+
+A ativação no CRM somente é aceita pelo backend quando envio, webhook e a flag explícita estão prontos. O endpoint administrativo retorna apenas nomes de variáveis ausentes, nunca seus valores.
 
 ## Templates que deverão ser submetidos à aprovação
 

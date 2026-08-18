@@ -83,7 +83,8 @@ Atenciosamente,
 };
 
 const nomeProvider: Record<ProviderWhatsapp, string> = { WAME: "🟡 WA.ME", EVOLUTION: "🟢 Evolution", META_CLOUD_API: "🔴 Meta Cloud API", Z_API: "🔴 Z-API", ULTRAMSG: "🔴 UltraMsg" };
-function modoProvider(provider: ProviderWhatsapp) { return provider === "WAME" ? "Envio manual (WA.ME)" : provider === "EVOLUTION" ? "Envio automático (Evolution API)" : "Provider não configurado"; }
+function modoProvider(provider: ProviderWhatsapp) { return provider === "WAME" ? "Envio manual (WA.ME)" : provider === "EVOLUTION" ? "Envio automático (Evolution API)" : provider === "META_CLOUD_API" ? "Envio oficial por template (Meta)" : "Provider não configurado"; }
+const templatesMeta: Record<string, string> = { "3 dias": "kenai_lembrete_vencimento_3_dias", hoje: "kenai_vencimento_hoje", "1 dia de atraso": "kenai_parcela_atrasada_1_dia", "7 dias de atraso": "kenai_parcela_atrasada_7_dias" };
 function vencimento(p: any) { return p.vencimento?.seconds ? new Date(p.vencimento.seconds * 1000) : new Date(p.vencimento); }
 function categoria(p: any) { if (p.status === "PAGA") return ""; const hoje = new Date(); hoje.setHours(0, 0, 0, 0); const dias = Math.ceil((vencimento(p).setHours(0, 0, 0, 0) - hoje.getTime()) / 86400000); return dias < 0 ? "ATRASO" : dias === 0 ? "HOJE" : dias === 1 ? "AMANHA" : dias === 3 ? "3DIAS" : ""; }
 function tipoMensagem(p: any) { const atual = categoria(p); return atual === "ATRASO" ? (Math.ceil((Date.now() - vencimento(p).getTime()) / 86400000) >= 7 ? "7 dias de atraso" : "1 dia de atraso") : atual === "HOJE" ? "hoje" : "3 dias"; }
@@ -173,13 +174,15 @@ export default function CentralWhatsapp() {
       console.info("[Cobrança WhatsApp] iniciando envio", { provider, clienteId: p.clienteId, parcela: p.parcela, tamanhoMensagem: mensagem.length, modo: modoProvider(provider) });
       const criada = await criarCobranca({ clienteId: p.clienteId, cliente: p.clienteNome || "", telefone, produto: p.produtoNome || "", parcela: Number(p.parcela), valor: Number(p.valor), vencimento: vencimento(p).toISOString(), tipoMensagem: tipo, status: "PENDENTE", criadoEm: new Date().toISOString(), provider, tentativas: 1, responsavel: usuario?.nome, mensagem });
       cobrancaId = criada.id;
-      const resultado = await whatsappProvider.send({ telefone, mensagem, provider, cliente: p.clienteNome, clienteId: p.clienteId });
+      const resultado = await whatsappProvider.send({ telefone, mensagem, provider, cliente: p.clienteNome, clienteId: p.clienteId, ...(provider === "META_CLOUD_API" ? { templateName: templatesMeta[tipo], parameters: [valores.cliente, valores.produto, valores.parcela, valores.valor, valores.vencimento] } : {}) });
       const dataEnvio = new Date().toISOString();
       const respostaEvolution = resultado.response as { evolution?: { messageId?: string; status?: string } } | undefined;
       const evolutionMessageId = respostaEvolution?.evolution?.messageId;
       const evolutionStatus = respostaEvolution?.evolution?.status;
-      await atualizarCobranca(cobrancaId, { status: resultado.status, enviadoEm: dataEnvio, ...(evolutionMessageId ? { evolutionMessageId } : {}), ...(evolutionStatus ? { evolutionStatus } : {}) });
-      await registrarLog({ cobrancaId, data: dataEnvio, usuario: usuario?.nome || "", cliente: p.clienteNome || "", telefone, provider, mensagem, tipo, resultado: resultado.status, ...(evolutionMessageId ? { evolutionMessageId } : {}), ...(evolutionStatus ? { evolutionStatus } : {}) });
+      const respostaMeta = resultado.response as { meta?: { messageId?: string } } | undefined;
+      const metaMessageId = respostaMeta?.meta?.messageId;
+      await atualizarCobranca(cobrancaId, { status: resultado.status, enviadoEm: dataEnvio, ...(evolutionMessageId ? { evolutionMessageId } : {}), ...(evolutionStatus ? { evolutionStatus } : {}), ...(metaMessageId ? { metaMessageId, metaStatus: "PENDING" } : {}) });
+      await registrarLog({ cobrancaId, data: dataEnvio, usuario: usuario?.nome || "", cliente: p.clienteNome || "", telefone, provider, mensagem, tipo, resultado: resultado.status, ...(evolutionMessageId ? { evolutionMessageId } : {}), ...(evolutionStatus ? { evolutionStatus } : {}), ...(metaMessageId ? { metaMessageId, metaStatus: "PENDING" } : {}) });
       console.info("[Cobrança WhatsApp] envio concluído", { provider, clienteId: p.clienteId, parcela: p.parcela, status: resultado.status, tempoMs: Math.round(performance.now() - inicio), evolutionMessageId: evolutionMessageId || null });
       if (resultado.status === "ERRO") {
         const texto = "Evolution confirmou falha na entrega.";
